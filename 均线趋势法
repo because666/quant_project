@@ -1,0 +1,286 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import tushare as ts
+from datetime import datetime, timedelta
+
+# ---------------------- 全局配置 ----------------------
+plt.rcParams["font.sans-serif"] = ["SimHei", "WenQuanYi Micro Hei", "Heiti TC", "Arial Unicode MS"]
+plt.rcParams["axes.unicode_minus"] = False
+plt.rcParams["figure.facecolor"] = "white"
+
+TUSHARE_TOKEN = "这里写自己的token"  # 替换为你的Token
+INDEX_CODE = "000001.SH"
+BACKTEST_YEARS = 3
+TRANSACTION_COST = 0.001
+MA_SHORT = 5
+MA_LONG = 20
+MA_LONGER = 60
+RSI_PERIOD = 14
+
+
+# ---------------------- 1. 数据获取与预处理 ----------------------
+def init_tushare(token: str) -> ts.pro_api or None:
+    if not isinstance(token, str) or len(token) < 30:
+        print("❌ 请输入有效Tushare Token（长度≥30位）")
+        return None
+    try:
+        ts.set_token(token)
+        pro = ts.pro_api()
+        pro.index_basic(ts_code=INDEX_CODE, limit=1)
+        print("✅ Tushare Pro API初始化成功")
+        return pro
+    except Exception as e:
+        error_msg = str(e).lower()
+        if "invalid token" in error_msg:
+            print(f"❌ Token无效：请检查Token是否正确")
+        elif "insufficient points" in error_msg:
+            print(f"❌ 积分不足：index_daily接口需2000积分")
+        else:
+            print(f"❌ API初始化失败：{str(e)}")
+        return None
+
+
+def get_index_data(pro: ts.pro_api, index_code: str, years: int) -> pd.DataFrame or None:
+    end_date = datetime.now().strftime("%Y%m%d")
+    start_date = (datetime.now() - timedelta(days=years * 365)).strftime("%Y%m%d")
+    try:
+        df = pro.index_daily(
+            ts_code=index_code,
+            start_date=start_date,
+            end_date=end_date,
+            fields="trade_date,open,high,low,close"
+        )
+        if df.empty:
+            print(f"❌ 未获取到{index_code}数据")
+            return None
+        # 处理日期格式并转换为中文列名
+        df = (df
+              .assign(日期=pd.to_datetime(df["trade_date"], format="%Y%m%d"))
+              .sort_values("日期")
+              .drop_duplicates(subset="日期")
+              .rename(columns={
+            "open": "开盘价",
+            "high": "最高价",
+            "low": "最低价",
+            "close": "收盘价"
+        })
+              .drop(columns=["trade_date"])
+              .set_index("日期")
+              )
+        trade_days = len(df)
+        expected_min = years * 240
+        if trade_days < expected_min * 0.5:
+            print(f"⚠️ 数据量不足（{trade_days}条），可能影响回测准确性")
+        print(f"✅ 成功获取{index_code}数据：{trade_days}条（{df.index[0].date()}至{df.index[-1].date()}）")
+        return df
+    except Exception as e:
+        print(f"❌ 数据获取失败：{str(e)}")
+        return None
+
+
+# ---------------------- 2. 技术指标计算 ----------------------
+def calculate_indicators(df: pd.DataFrame) -> pd.DataFrame or None:
+    if df is None or df.empty or "收盘价" not in df.columns:
+        print("❌ 无有效数据计算指标")
+        return None
+    df_copy = df.copy()
+    # 均线（中文列名）
+    df_copy[f"{MA_SHORT}日均线"] = df_copy["收盘价"].rolling(MA_SHORT, min_periods=1).mean()
+    df_copy[f"{MA_LONG}日均线"] = df_copy["收盘价"].rolling(MA_LONG, min_periods=1).mean()
+    df_copy[f"{MA_LONGER}日均线"] = df_copy["收盘价"].rolling(MA_LONGER, min_periods=1).mean()
+    # MACD（中文列名）
+    df_copy["EMA12"] = df_copy["收盘价"].ewm(span=12, adjust=False).mean()
+    df_copy["EMA26"] = df_copy["收盘价"].ewm(span=26, adjust=False).mean()
+    df_copy["DIFF"] = df_copy["EMA12"] - df_copy["EMA26"]
+    df_copy["DEA"] = df_copy["DIFF"].ewm(span=9, adjust=False).mean()
+    df_copy["MACD"] = 2 * (df_copy["DIFF"] - df_copy["DEA"])
+    # RSI（中文列名）
+    delta = df_copy["收盘价"].diff(1)
+    gain = delta.where(delta > 0, 0)
+    loss = -delta.where(delta < 0, 0)
+    avg_gain = gain.ewm(RSI_PERIOD, adjust=False, min_periods=1).mean()
+    avg_loss = loss.ewm(RSI_PERIOD, adjust=False, min_periods=1).mean()
+    rs = avg_gain / (avg_loss + 1e-6)
+    df_copy[f"RSI({RSI_PERIOD})"] = 100 - (100 / (1 + rs))
+
+    # 清理临时计算列
+    df_copy = df_copy.drop(columns=["EMA12", "EMA26"])
+
+    df_valid = df_copy.dropna()
+    print(f"✅ 指标计算完成：{len(df_valid)}条有效数据（删除{len(df_copy) - len(df_valid)}条无效数据）")
+    return df_valid
+
+
+# ---------------------- 3. 可视化分析 ----------------------
+def plot_technical_analysis(df: pd.DataFrame):
+    if df is None or df.empty:
+        print("❌ 无数据可可视化")
+        return
+    required = ["收盘价", f"{MA_SHORT}日均线", f"{MA_LONG}日均线", f"{MA_LONGER}日均线", "DIFF", "DEA", "MACD",
+                f"RSI({RSI_PERIOD})"]
+    missing = [f for f in required if f not in df.columns]
+    if missing:
+        print(f"❌ 缺少字段：{missing}，无法绘图")
+        return
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(15, 12), dpi=100, sharex=True)
+    fig.suptitle(f"{INDEX_CODE}技术指标分析", fontsize=14, y=0.98)
+    # 价格与均线
+    ax1.plot(df["收盘价"], label="收盘价", linewidth=1.5, color="#1f77b4")
+    ax1.plot(df[f"{MA_SHORT}日均线"], label=f"{MA_SHORT}日均线", alpha=0.8, color="#ff7f0e")
+    ax1.plot(df[f"{MA_LONG}日均线"], label=f"{MA_LONG}日均线", alpha=0.8, color="#2ca02c")
+    ax1.plot(df[f"{MA_LONGER}日均线"], label=f"{MA_LONGER}日均线", alpha=0.8, color="#d62728")
+    ax1.set_title("价格走势与均线系统", fontsize=12)
+    ax1.grid(alpha=0.3)
+    ax1.legend(loc="upper left")
+    # MACD
+    ax2.plot(df["DIFF"], label="DIFF", color="#1f77b4")
+    ax2.plot(df["DEA"], label="DEA", color="#ff7f0e")
+    ax2.bar(df.index, df["MACD"], width=0.8, alpha=0.5,
+            color=np.where(df["MACD"] > 0, "#2ca02c", "#d62728"))
+    ax2.axhline(0, color="black", linestyle="--", alpha=0.3)
+    ax2.set_title("MACD指标", fontsize=12)
+    ax2.grid(alpha=0.3)
+    ax2.legend(loc="upper left")
+    # RSI
+    ax3.plot(df[f"RSI({RSI_PERIOD})"], label=f"RSI({RSI_PERIOD})", color="#1f77b4")
+    ax3.axhline(70, color="red", linestyle="--", alpha=0.5, label="超买线(70)")
+    ax3.axhline(30, color="green", linestyle="--", alpha=0.5, label="超卖线(30)")
+    ax3.set_title("RSI指标", fontsize=12)
+    ax3.grid(alpha=0.3)
+    ax3.legend(loc="upper left")
+    ax3.tick_params(axis="x", rotation=45)
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    plt.show()
+
+
+# ---------------------- 4. 均线交叉策略回测 ----------------------
+def backtest_ma_cross(df: pd.DataFrame) -> pd.DataFrame or None:
+    if df is None or df.empty:
+        print("❌ 无数据可回测")
+        return None
+    ma_short_col = f"{MA_SHORT}日均线"
+    ma_long_col = f"{MA_LONG}日均线"
+    if ma_short_col not in df.columns or ma_long_col not in df.columns:
+        print(f"❌ 缺少均线字段：需{ma_short_col}和{ma_long_col}")
+        return None
+
+    df_result = df.copy()
+
+    # 1. 生成交易信号（中文列名）
+    df_result["金叉"] = (df_result[ma_short_col] > df_result[ma_long_col]) & \
+                        (df_result[ma_short_col].shift(1) <= df_result[ma_long_col].shift(1))
+    df_result["死叉"] = (df_result[ma_short_col] < df_result[ma_long_col]) & \
+                        (df_result[ma_short_col].shift(1) >= df_result[ma_long_col].shift(1))
+    df_result.loc[:, "交易信号"] = 0  # 1=买入, -1=卖出, 0=无操作
+    df_result.loc[df_result["金叉"], "交易信号"] = 1
+    df_result.loc[df_result["死叉"], "交易信号"] = -1
+
+    # 2. 计算持仓（中文列名）
+    df_result["持仓状态"] = np.where(df_result["交易信号"] == 1, 1,
+                                     np.where(df_result["交易信号"] == -1, 0, np.nan))
+    df_result["持仓状态"] = df_result["持仓状态"].ffill().fillna(0)
+
+    # 3. 计算收益率（中文列名）
+    df_result["基准日收益"] = df_result["收盘价"].pct_change()
+    df_result["策略日收益"] = df_result["持仓状态"].shift(1) * df_result["基准日收益"]
+    # 扣除交易成本
+    df_result["策略日收益"] -= df_result["交易信号"].shift(1).apply(lambda x: TRANSACTION_COST if x == 1 else 0)
+
+    # 4. 计算净值和累计收益（中文列名）
+    df_result["策略净值"] = (1 + df_result["策略日收益"]).cumprod()
+    df_result["基准净值"] = (1 + df_result["基准日收益"]).cumprod()
+    df_result["策略累计收益"] = df_result["策略净值"] - 1
+    df_result["基准累计收益"] = df_result["基准净值"] - 1
+
+    # 过滤无效数据
+    df_valid = df_result.dropna(subset=["策略日收益"]).copy()
+    if len(df_valid) == 0:
+        print("❌ 无有效回测数据")
+        return None
+
+    # 5. 计算核心绩效指标
+    total_days = len(df_valid)
+    annual_days = 252
+    final_strategy_net = df_valid["策略净值"].iloc[-1]
+    annual_return = (final_strategy_net) ** (annual_days / total_days) - 1
+
+    # 计算最大回撤
+    df_valid.loc[:, "策略净值最大值"] = df_valid["策略净值"].cummax()
+    df_valid.loc[:, "回撤率"] = (df_valid["策略净值最大值"] - df_valid["策略净值"]) / df_valid["策略净值最大值"]
+    max_drawdown = df_valid["回撤率"].max()
+
+    # 夏普比率
+    daily_return_mean = df_valid["策略日收益"].mean()
+    daily_return_std = df_valid["策略日收益"].std() + 1e-6
+    sharpe_ratio = np.sqrt(annual_days) * daily_return_mean / daily_return_std
+
+    # 6. 回测结果可视化
+    plt.figure(figsize=(12, 6), dpi=100)
+    plt.plot(df_valid["基准净值"], label=f"基准净值（{INDEX_CODE}）", color="#1f77b4", alpha=0.8)
+    plt.plot(df_valid["策略净值"], label=f"策略净值（{MA_SHORT}/{MA_LONG}日均线交叉）", color="#d62728", alpha=0.8)
+    plt.axhline(y=1, color="black", linestyle="--", alpha=0.3, label="初始净值（1）")
+    plt.title("均线交叉策略回测结果（净值视角）", fontsize=14)
+    plt.xlabel("日期", fontsize=12)
+    plt.ylabel("净值（初始=1）", fontsize=12)
+    plt.grid(alpha=0.3)
+    plt.legend(loc="upper left")
+    plt.tick_params(axis="x", rotation=45)
+    plt.tight_layout()
+    plt.show()
+
+    # 7. 打印回测摘要
+    print("\n" + "=" * 50)
+    print("📊 均线交叉策略回测结果摘要")
+    print("=" * 50)
+    print(f"测试标的: {INDEX_CODE}（{MA_SHORT}日均线交叉{MA_LONG}日均线）")
+    print(f"测试周期: {df_valid.index[0].date()} 至 {df_valid.index[-1].date()}（共{total_days}个交易日）")
+    print(f"交易成本: {TRANSACTION_COST * 100:.2f}%（单次买入扣除）")
+    print("-" * 50)
+    print(f"基准累计收益: {df_valid['基准累计收益'].iloc[-1]:.2%}")
+    print(f"策略累计收益: {df_valid['策略累计收益'].iloc[-1]:.2%}")
+    print(f"策略年化收益率: {annual_return:.2%}")
+    print(f"最大回撤: {max_drawdown:.2%}")
+    print(f"夏普比率: {sharpe_ratio:.2f}")
+    print("=" * 50)
+    trade_count = df_valid["交易信号"].abs().sum()
+    print(f"📈 策略交易统计：共{trade_count}次交易（平均{total_days / trade_count:.0f}天/次）")
+    print("=" * 50 + "\n")
+
+    return df_result
+
+
+# ---------------------- 主程序 ----------------------
+if __name__ == "__main__":
+    try:
+        pro = init_tushare(TUSHARE_TOKEN)
+        df_index = get_index_data(pro, INDEX_CODE, BACKTEST_YEARS) if pro else None
+        df_with_indicators = calculate_indicators(df_index) if df_index is not None else None
+
+        if df_with_indicators is not None:
+            plot_technical_analysis(df_with_indicators)
+            backtest_result = backtest_ma_cross(df_with_indicators)
+
+            if backtest_result is not None:
+                # 优化Excel导出格式，确保日期正确显示
+                file_name = f"{INDEX_CODE}_均线交叉回测结果.xlsx"
+                with pd.ExcelWriter(file_name, engine="openpyxl") as writer:
+                    # 将索引转换为列以便Excel正确识别日期格式
+                    df_export = backtest_result.reset_index()
+                    df_export.to_excel(writer, index=False)
+
+                    # 调整日期列格式为日期类型
+                    worksheet = writer.sheets['Sheet1']
+                    date_col = df_export.columns.get_loc('日期') + 1  # openpyxl列索引从1开始
+                    for row in range(2, len(df_export) + 2):  # 从第二行开始（跳过表头）
+                        worksheet.cell(row=row, column=date_col).number_format = 'yyyy-mm-dd'
+
+                print(f"💾 回测结果已保存至：{file_name}")
+    except Exception as e:
+        print(f"\n⚠️ 程序执行中出现异常：{str(e)}")
+        if 'backtest_result' in locals() and backtest_result is not None:
+            backup_name = f"{INDEX_CODE}_均线交叉回测结果_备份.xlsx"
+            with pd.ExcelWriter(backup_name, engine="openpyxl") as writer:
+                df_export = backtest_result.reset_index()
+                df_export.to_excel(writer, index=False)
+            print(f"💾 已备份回测结果至：{backup_name}")
