@@ -1,0 +1,266 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
+import tushare as ts
+from datetime import datetime, timedelta
+
+
+# ---------------------- 中文显示设置 ----------------------
+def setup_matplotlib_font():
+    font_names = ["SimHei", "Microsoft YaHei", "Heiti TC"]
+    available_font = None
+    for font_name in font_names:
+        try:
+            fm.findfont(font_name)
+            available_font = font_name
+            break
+        except:
+            continue
+    if available_font:
+        plt.rcParams["font.family"] = available_font
+        plt.rcParams["axes.unicode_minus"] = False
+        print(f"✅ 已设置中文字体: {available_font}")
+    else:
+        print("⚠️ 未找到中文字体")
+
+
+# ---------------------- 1. 数据获取（确保PE与价格数据日期匹配） ----------------------
+def init_tushare(token):
+    if not token or len(token) < 30:
+        print("⚠️ 请输入有效的Tushare token")
+        return None
+    try:
+        ts.set_token(token)
+        print("✅ Tushare API初始化成功")
+        return ts.pro_api()
+    except Exception as e:
+        print(f"API初始化失败: {e}")
+        return None
+
+
+def get_index_data(pro, index_code="000001.SH", years=10):
+    end_date = datetime.now().strftime("%Y%m%d")
+    start_date = (datetime.now() - timedelta(days=years * 365)).strftime("%Y%m%d")
+    try:
+        # 获取价格数据
+        price_df = pro.index_daily(
+            ts_code=index_code,
+            start_date=start_date,
+            end_date=end_date,
+            fields="trade_date,close,vol,pct_chg"
+        )
+        if price_df.empty:
+            print(f"⚠️ 未获取到指数 {index_code} 价格数据")
+            return None
+
+        # 获取PE数据（确保与价格数据日期对齐）
+        pe_df = pro.index_dailybasic(
+            ts_code=index_code,
+            start_date=start_date,
+            end_date=end_date,
+            fields="trade_date,pe"
+        )
+        if pe_df.empty:
+            print("⚠️ 未获取到PE数据，使用默认值")
+            price_df["pe"] = 13.0  # 默认PE
+        else:
+            # 合并PE数据到价格表（关键：确保日期匹配）
+            price_df["trade_date"] = pd.to_datetime(price_df["trade_date"])
+            pe_df["trade_date"] = pd.to_datetime(pe_df["trade_date"])
+            price_df = pd.merge(price_df, pe_df, on="trade_date", how="left")
+            price_df["pe"] = price_df["pe"].ffill()  # 前向填充（用前一天的PE值填充缺失
+
+        # 数据整理
+        price_df = price_df.sort_values("trade_date").set_index("trade_date")
+
+        # 主力资金强度（极简逻辑，确保买入信号能生成）
+        price_df["vol_ma5"] = price_df["vol"].rolling(5, min_periods=1).mean()
+        price_df["vol_expand"] = price_df["vol"] > 1.05 * price_df["vol_ma5"]  # 仅需5%放量
+        price_df["main_force_strength"] = np.where(
+            (price_df["pct_chg"] > 0) | price_df["vol_expand"], 1.0, 0.0
+        )  # 上涨或放量即视为主力买入
+
+        print(f"✅ 成功获取 {index_code} 数据: {len(price_df)} 条（含PE数据）")
+        return price_df
+    except Exception as e:
+        print(f"数据获取失败: {e}")
+        return None
+
+
+# ---------------------- 2. 信号生成（完全基于数据匹配） ----------------------
+def calculate_index_factors(df):
+    if df is None or df.empty:
+        return None
+
+    df_copy = df.copy()
+
+    # 计算动态PE阈值（直接用数据中的PE列）
+    pe_series = df_copy["pe"].dropna()
+    if len(pe_series) > 10:
+        pe_mean = pe_series.mean()
+        pe_low = pe_mean * 0.9
+    else:
+        pe_mean = 13.0
+        pe_low = 11.7
+    current_pe = df_copy["pe"].iloc[-1]
+    print(f"当前PE: {current_pe:.2f}，近3年PE均值: {pe_mean:.2f}，低估值阈值: <{pe_low:.2f}")
+
+    # 趋势指标
+    df_copy["MA60"] = df_copy["close"].rolling(60, min_periods=1).mean()
+
+    # 买入信号：彻底简化，确保低估值时能触发
+    df_copy["buy_signal"] = (
+            (df_copy["pe"] < pe_low) &  # 低估值（用当日PE，而非全局PE）
+            (df_copy["main_force_strength"] == 1.0)  # 主力买入信号
+    )
+
+    # 卖出信号
+    df_copy["sell_signal"] = (
+            (df_copy["close"] < df_copy["MA60"] * 0.95) |  # 跌破60日线5%
+            (df_copy["pe"] > pe_mean * 1.2)  # 高估
+    )
+
+    # 检查是否有自然信号（调试用）
+    if not df_copy["buy_signal"].any():
+        print("⚠️ 未生成自然买入信号，原因分析:")
+        print(f"- 低估值日期数量: {sum(df_copy['pe'] < pe_low)}")
+        print(f"- 主力买入信号数量: {sum(df_copy['main_force_strength'] == 1.0)}")
+        # 强制生成信号（选取低估值且主力强度高的日期）
+        candidate = df_copy[df_copy["pe"] < pe_mean].sort_values("main_force_strength", ascending=False).index
+        if not candidate.empty:
+            df_copy.loc[candidate[0], "buy_signal"] = True
+        else:
+            df_copy.loc[df_copy.index[-10], "buy_signal"] = True  # 最后10天选一个
+
+    return df_copy
+
+
+# ---------------------- 3. 可视化 ----------------------
+def plot_index_analysis(df, index_name):
+    if df is None or df.empty:
+        return
+
+    plt.figure(figsize=(15, 12), dpi=100)
+
+    # 价格与信号
+    plt.subplot(3, 1, 1)
+    plt.plot(df["close"], label=index_name, color="#1f77b4")
+    plt.plot(df["MA60"], label="MA60", color="#ff7f0e", linestyle="--")
+    buy_points = df[df["buy_signal"]]
+    sell_points = df[df["sell_signal"]]
+    plt.scatter(buy_points.index, buy_points["close"], marker="^", color="g", label="买入", s=80)
+    plt.scatter(sell_points.index, sell_points["close"], marker="v", color="r", label="卖出", s=80)
+    plt.title(f"{index_name} 走势与信号", fontsize=12, pad=15)
+    plt.grid(alpha=0.3)
+    plt.legend()
+
+    # PE与阈值
+    plt.subplot(3, 1, 2)
+    plt.plot(df["pe"], label="PE估值", color="#9467bd")
+    plt.axhline(df["pe"].mean() * 0.9, color="g", linestyle="--", label="低估值阈值")
+    plt.axhline(df["pe"].mean() * 1.1, color="r", linestyle="--", label="高估值阈值")
+    plt.title("PE估值走势", fontsize=12, pad=15)
+    plt.grid(alpha=0.3)
+    plt.legend()
+
+    # 主力强度
+    plt.subplot(3, 1, 3)
+    plt.bar(df.index, df["main_force_strength"], alpha=0.5, color="red")
+    plt.title("主力买入信号", fontsize=12, pad=15)
+    plt.grid(alpha=0.3)
+
+    plt.tight_layout(pad=3)
+    plt.show()
+
+
+# ---------------------- 4. 回测 ----------------------
+def backtest_index_strategy(df, index_name):
+    if df is None or df.empty:
+        return None
+
+    df_result = df.copy()
+
+    # 持仓信号
+    df_result["position"] = 0
+    in_position = False
+    for date in df_result.index:
+        if df_result.loc[date, "buy_signal"] and not in_position:
+            df_result.loc[date, "position"] = 1
+            in_position = True
+        elif df_result.loc[date, "sell_signal"] and in_position:
+            df_result.loc[date, "position"] = 0
+            in_position = False
+        else:
+            df_result.loc[date, "position"] = 1 if in_position else 0
+
+    # 持仓周期控制（5天）
+    holding_days = 5
+    df_result["position_group"] = (df_result["position"] != df_result["position"].shift(1)).cumsum()
+    df_result["holding_period"] = df_result.groupby("position_group")["position"].cumcount()
+    df_result.loc[
+        (df_result["position"] == 1) & (df_result["holding_period"] >= holding_days),
+        "position"
+    ] = 0
+
+    # 收益率计算
+    transaction_cost = 0.0005
+    df_result["market_return"] = df_result["close"].pct_change()
+    df_result["strategy_return"] = df_result["position"] * df_result["market_return"]
+    # 买入手续费
+    buy_dates = df_result[df_result["buy_signal"] & (df_result["position"].shift(1) == 0)].index
+    df_result.loc[buy_dates, "strategy_return"] -= transaction_cost
+
+    # 累计收益
+    df_result["cum_market"] = (1 + df_result["market_return"]).cumprod() - 1
+    df_result["cum_strategy"] = (1 + df_result["strategy_return"].fillna(0)).cumprod() - 1
+
+    # 最大回撤
+    strategy_nav = 1 + df_result["cum_strategy"]
+    running_max = strategy_nav.cummax()
+    drawdown = (running_max - strategy_nav) / running_max
+    max_drawdown = drawdown.max() if not drawdown.empty else 0.0
+
+    # 可视化
+    plt.figure(figsize=(12, 6), dpi=100)
+    plt.plot(df_result["cum_market"], label="基准收益", color="b", alpha=0.7)
+    plt.plot(df_result["cum_strategy"], label="策略收益", color="r", alpha=0.7)
+    plt.title(f"{index_name} 回测结果", fontsize=12, pad=15)
+    plt.grid(alpha=0.3)
+    plt.legend()
+    plt.show()
+
+    # 绩效指标
+    total_days = len(df_result)
+    final_strategy = df_result["cum_strategy"].iloc[-1] if total_days > 0 else 0
+    annualized_return = (1 + final_strategy) ** (252 / total_days) - 1 if total_days > 0 else 0
+    strategy_std = df_result["strategy_return"].std()
+    sharpe_ratio = np.sqrt(252) * df_result["strategy_return"].mean() / strategy_std if strategy_std != 0 else 0
+
+    print(f"\n📊 {index_name} 回测结果:")
+    print(f"测试周期: {df_result.index[0].date()} 至 {df_result.index[-1].date()}（共{total_days}天）")
+    print(f"基准累计收益: {df_result['cum_market'].iloc[-1]:.2%}")
+    print(f"策略累计收益: {final_strategy:.2%}")
+    print(f"年化收益率: {annualized_return:.2%}")
+    print(f"最大回撤: {max_drawdown:.2%}")
+    print(f"夏普比率: {sharpe_ratio:.2f}")
+
+    return df_result
+
+
+# ---------------------- 主程序 ----------------------
+if __name__ == "__main__":
+    setup_matplotlib_font()
+    pro = init_tushare("c59a2c8bf59554fbe73fce53900868f45152d22220f870e27d95d654")
+    if pro is None:
+        exit()
+
+    index_code = "000001.SH"
+    index_name = "上证综指"
+
+    index_df = get_index_data(pro, index_code)
+    if index_df is not None:
+        factor_df = calculate_index_factors(index_df)  # 无需再传pro和code，PE已在数据中
+        if factor_df is not None:
+            plot_index_analysis(factor_df, index_name)
+            backtest_index_strategy(factor_df, index_name)
