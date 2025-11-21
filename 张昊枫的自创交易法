@@ -251,7 +251,7 @@ def backtest_index_strategy(df, index_name):
 # ---------------------- 主程序 ----------------------
 if __name__ == "__main__":
     setup_matplotlib_font()
-    pro = init_tushare("c59a2c8bf59554fbe73fce53900868f45152d22220f870e27d95d654")
+    pro = init_tushare("这里改成自己的tushare码")
     if pro is None:
         exit()
 
