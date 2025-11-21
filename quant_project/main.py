@@ -1,24 +1,49 @@
-"""
-量化策略主程序
-组长负责维护这个文件，用来串联整个流程
-"""
+# main.py - 你的主程序框架
 
-print("=== 量化选股策略项目开始运行 ===")
+import config as cfg
+from data.data_fetcher import fetch_data
+from data.data_cleaner import clean_data
+from strategy.model_trainer import train_model
+from strategy.signal_generator import generate_signals
+from backtest.backtest_engine import run_backtest
 
-# 将来，这里会依次调用三个组的代码
-# 1. 首先会调用数据组的代码
-print("[将来这里] 步骤1: 执行数据获取与清洗...")
-# import data.data_fetcher as data_fetcher
-# data_fetcher.run()
+def main():
+    print("=== 量化选股策略项目开始运行 ===")
+    
+    # 步骤1: 数据获取与清洗
+    print("步骤1: 执行数据获取与清洗...")
+    try:
+        # 数据组完成后，取消下面的注释
+        # fetch_data(cfg.STOCK_LIST, cfg.TRAIN_START_DATE, cfg.TRAIN_END_DATE)
+        # clean_data()
+        print("✅ [待实现] 数据获取与清洗")
+    except Exception as e:
+        print(f"❌ 数据获取与清洗失败: {e}")
+        return
 
-# 2. 然后调用策略组的代码
-print("[将来这里] 步骤2: 执行模型训练与信号生成...")
-# import strategy.model_trainer as strategy
-# strategy.run()
+    # 步骤2: 模型训练与信号生成
+    print("步骤2: 执行模型训练与信号生成...")
+    try:
+        # 策略组完成后，取消下面的注释
+        # model = train_model()
+        # generate_signals(model)
+        print("✅ [待实现] 模型训练与信号生成")
+    except Exception as e:
+        print(f"❌ 模型训练与信号生成失败: {e}")
+        return
 
-# 3. 最后调用回测组的代码
-print("[将来这里] 步骤3: 执行回测验证...")
-# import backtest.backtest_engine as backtest
-# backtest.run()
+    # 步骤3: 回测验证
+    print("步骤3: 执行回测验证...")
+    try:
+        # 回测组完成后，取消下面的注释
+        # performance = run_backtest()
+        # print("回测结果:", performance)
+        print("✅ [待实现] 回测验证")
+    except Exception as e:
+        print(f"❌ 回测验证失败: {e}")
+        return
 
-print("=== 所有流程执行完毕 ===")
+    print("=== 所有流程执行完毕 ===")
+
+if __name__ == "__main__":
+    main()
