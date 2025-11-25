@@ -1,0 +1,115 @@
+import pandas as pd
+import numpy as np
+import xgboost as xgb
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+import matplotlib.pyplot as plt
+
+# ---------------------- 1. 数据获取与预处理（以股票数据为例）----------------------
+def get_stock_data(stock_code="600036.SH", start_date="2018-01-01", end_date="2023-12-31"):
+    """获取股票数据（这里用本地模拟数据，实际可替换为tushare/baostock接口）"""
+    # 模拟数据：日期、开盘价、收盘价、最高价、最低价、成交量
+    date_range = pd.date_range(start=start_date, end=end_date, freq="D")
+    data = pd.DataFrame({
+        "date": date_range,
+        "open": np.random.uniform(10, 50, len(date_range)),
+        "close": np.random.uniform(10, 50, len(date_range)),
+        "high": np.random.uniform(10, 55, len(date_range)),
+        "low": np.random.uniform(9, 49, len(date_range)),
+        "volume": np.random.randint(1000000, 10000000, len(date_range))
+    }).dropna()
+    
+    # 计算收益率（目标变量：下一日是否上涨）
+    data["return"] = data["close"].pct_change(1).shift(-1)  # 下一日收益率
+    data["target"] = (data["return"] > 0).astype(int)  # 1=上涨，0=下跌
+    
+    # 计算技术指标（特征变量）
+    data["ma5"] = data["close"].rolling(window=5).mean()
+    data["ma10"] = data["close"].rolling(window=10).mean()
+    data["rsi"] = calculate_rsi(data["close"], window=14)
+    data["macd"], data["signal"], _ = calculate_macd(data["close"])
+    
+    # 去除缺失值
+    data = data.dropna()
+    return data
+
+def calculate_rsi(prices, window=14):
+    """计算相对强弱指数RSI"""
+    delta = prices.diff(1)
+    gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()
+    loss = (-delta.where(delta < 0, 0)).rolling(window=window).mean()
+    rs = gain / loss
+    rsi = 100 - (100 / (1 + rs))
+    return rsi
+
+def calculate_macd(prices, fast_window=12, slow_window=26, signal_window=9):
+    """计算MACD指标"""
+    ema_fast = prices.ewm(span=fast_window, adjust=False).mean()
+    ema_slow = prices.ewm(span=slow_window, adjust=False).mean()
+    macd = ema_fast - ema_slow
+    signal = macd.ewm(span=signal_window, adjust=False).mean()
+    histogram = macd - signal
+    return macd, signal, histogram
+
+# ---------------------- 2. 特征工程与数据划分 ----------------------
+def prepare_data(data):
+    """划分特征、目标变量，拆分训练集/测试集（时间序列划分，避免未来数据泄露）"""
+    # 特征列（排除日期、收益率、目标变量）
+    feature_cols = ["open", "close", "high", "low", "volume", "ma5", "ma10", "rsi", "macd", "signal"]
+    X = data[feature_cols]
+    y = data["target"]
+    
+    # 时间序列划分：前80%训练，后20%测试（不打乱顺序）
+    split_idx = int(len(X) * 0.8)
+    X_train, X_test = X.iloc[:split_idx], X.iloc[split_idx:]
+    y_train, y_test = y.iloc[:split_idx], y.iloc[split_idx:]
+    test_data = data.iloc[split_idx:]  # 保留测试集完整数据用于回测
+    
+    return X_train, X_test, y_train, y_test, test_data
+
+# ---------------------- 3. XGBoost模型训练与预测 ----------------------
+def train_xgboost_model(X_train, y_train):
+    """训练XGBoost分类模型"""
+    model = xgb.XGBClassifier(
+        n_estimators=100,
+        max_depth=5,
+        learning_rate=0.1,
+        objective="binary:logistic",
+        eval_metric="accuracy",
+        random_state=42
+    )
+    model.fit(X_train, y_train)
+    return model
+
+def predict_model(model, X_test):
+    """模型预测（返回类别和概率）"""
+    y_pred = model.predict(X_test)
+    y_pred_proba = model.predict_proba(X_test)[:, 1]  # 上涨概率
+    return y_pred, y_pred_proba
+
+# ---------------------- 4. 回测逻辑实现 ----------------------
+def backtest(test_data, y_pred, y_pred_proba, threshold=0.5):
+    """基于模型预测进行回测"""
+    # 合并回测数据
+    backtest_df = test_data.copy()
+    backtest_df["pred"] = y_pred
+    backtest_df["pred_proba"] = y_pred_proba
+    
+    # 交易信号：预测上涨概率≥阈值时买入（1=持仓，0=空仓）
+    backtest_df["signal"] = (backtest_df["pred_proba"] >= threshold).astype(int)
+    
+    # 计算策略收益率（持仓时跟随股票收益率，空仓时收益率为0）
+    backtest_df["strategy_return"] = backtest_df["signal"] * backtest_df["return"]
+    
+    # 计算累计收益率
+    backtest_df["cumulative_stock"] = (1 + backtest_df["return"]).cumprod()
+    backtest_df["cumulative_strategy"] = (1 + backtest_df["strategy_return"]).cumprod()
+    
+    # 计算回测指标
+    total_days = len(backtest_df)
+    strategy_total_return = backtest_df["cumulative_strategy"].iloc[-1] - 1
+    stock_total_return = backtest_df["cumulative_stock"].iloc[-1] - 1
+    strategy_annual_return = (1 + strategy_total_return) ** (252 / total_days) - 1  # 年化收益率（252个交易日）
+    stock_annual_return = (1 + stock_total_return) ** (252 / total_days) - 1
+    strategy_sharpe = np.sqrt(252) * backtest_df["strategy_return"].mean() / backtest_df["strategy_return"].std()  # 夏普比率
+    win_rate = (backtest_df["strategy_return"] >
