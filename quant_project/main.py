@@ -13,9 +13,9 @@ def main():
     # 步骤1: 数据获取与清洗
     print("步骤1: 执行数据获取与清洗...")
     try:
-        # 数据组完成后，取消下面的注释
-        # fetch_data(cfg.STOCK_LIST, cfg.TRAIN_START_DATE, cfg.TRAIN_END_DATE)
-        # clean_data()
+        
+         fetch_data(cfg.STOCK_LIST, cfg.TRAIN_START_DATE, cfg.TRAIN_END_DATE)
+         clean_data()
         print("✅ [待实现] 数据获取与清洗")
     except Exception as e:
         print(f"❌ 数据获取与清洗失败: {e}")
@@ -24,9 +24,9 @@ def main():
     # 步骤2: 模型训练与信号生成
     print("步骤2: 执行模型训练与信号生成...")
     try:
-        # 策略组完成后，取消下面的注释
-        # model = train_model()
-        # generate_signals(model)
+        
+        model = train_model()
+        generate_signals(model)
         print("✅ [待实现] 模型训练与信号生成")
     except Exception as e:
         print(f"❌ 模型训练与信号生成失败: {e}")
@@ -35,9 +35,9 @@ def main():
     # 步骤3: 回测验证
     print("步骤3: 执行回测验证...")
     try:
-        # 回测组完成后，取消下面的注释
-        # performance = run_backtest()
-        # print("回测结果:", performance)
+        
+        performance = run_backtest()
+        print("回测结果:", performance)
         print("✅ [待实现] 回测验证")
     except Exception as e:
         print(f"❌ 回测验证失败: {e}")
@@ -47,3 +47,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
