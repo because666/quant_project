@@ -68,6 +68,135 @@
 4.  **我们是一个整体**：你手中的文件，就像接力棒。只有你清晰地交给下一个人，比赛才能继续。**主动交棒，主动确认**，是最高效的合作。
 
 
+#提示词规范#：
+我为你设计了一套**“零基础AI编码流水线”提示词规范**。它包含一个**万能公式**和每个文件的**具体示例**，组员几乎只需“填空”即可。请将以下内容直接发到群里。
+
+---
+
+# 🧠 零基础AI编码提示词规范（必读！）
+
+## 一、 核心：用好AI的“万能公式”
+
+把这五句话**复制**到你的AI对话框（如ChatGPT/DeepSeek/文心一言），然后按你的任务修改【】里的内容。
+
+```
+【第一句：定角色】
+请你扮演一位经验丰富的Python量化工程师，正在严格遵循一个已有架构的项目进行开发。
+
+【第二句：给上下文】
+项目根目录是 `quant_ml_project/`。我的任务是完成其中的一个特定文件，文件完整路径是：【请填写你的文件路径，例如：quant_ml_project/data_module/data_fetcher.py】。
+
+【第三句：说要求】
+请为这个文件编写完整、可运行的Python代码，实现以下**具体功能**：
+1. 功能点1：【必须非常具体，例如：定义一个名为 `fetch_stock_data` 的函数，接受 `symbol_list`, `start_date`, `end_date` 三个参数】。
+2. 功能点2：【例如：使用AKShare库，获取这些股票在指定日期的日线数据（包括open, close, high, low, volume）】。
+3. 功能点3：【例如：将获取的所有数据合并，保存到项目内的 `data_module/outputs/raw_data.parquet` 文件】。
+请使用pandas和numpy库，代码需添加清晰的中文注释。
+
+【第四句：锁接口（最重要！）】
+请务必严格遵守以下项目约定，否则代码将无法与队友对接：
+- **输入**：函数参数的形式必须为【例如：(symbol_list: list, start_date: str, end_date: str)】。
+- **输出**：函数的返回值必须是【例如：一个pandas DataFrame，同时将数据保存到指定路径】。
+- **文件与路径**：生成的数据/模型文件**必须**保存到【例如：`data_module/outputs/raw_data.parquet`】，不能是其他路径。
+- **列名规范**：数据表的列名**必须**为：【例如：['date', 'symbol', 'open', 'high', 'low', 'close', 'volume']】。
+- **配置读取**：所有参数（如股票列表、开始日期）**必须**从 `quant_ml_project/config/project_config.py` 中导入，不要写死在代码里。
+
+【第五句：避坑指南】
+编写代码时请注意：
+1. 添加必要的异常处理（如网络请求失败）。
+2. 避免使用绝对路径（如C:/Users/...），全部使用相对于项目根目录的路径。
+3. 打印一些进度信息（如“正在获取XXX股票数据”）。
+```
+
+---
+
+## 二、 针对每个文件的具体提示词示例（直接复制使用）
+
+### 📊 **数据模块**
+**文件：`data_fetcher.py` （组员A）**
+```
+（使用上面的万能公式，【】内内容替换如下）
+【文件路径】：quant_ml_project/data_module/data_fetcher.py
+【功能点1】：定义一个名为 `fetch_stock_data` 的函数。
+【功能点2】：函数从 `config/project_config.py` 导入 `STOCK_LIST`, `START_DATE`, `END_DATE` 作为默认参数。
+【功能点3】：使用AKShare库，循环获取`STOCK_LIST`中每只股票从`START_DATE`到`END_DATE`的日线数据。
+【功能点4】：将所有数据合并，并保存到 `data_module/outputs/raw_data.parquet`。
+【输入】：函数应允许覆盖默认参数，即 `def fetch_stock_data(symbol_list=STOCK_LIST, start_date=START_DATE, end_date=END_DATE):`
+【输出】：返回合并后的DataFrame，并保存文件。
+【列名】：['date', 'symbol', 'open', 'high', 'low', 'close', 'volume']
+```
+
+**文件：`data_cleaner.py` （组员B）**
+```
+【文件路径】：quant_ml_project/data_module/data_cleaner.py
+【功能点1】：定义一个名为 `clean_raw_data` 的函数。
+【功能点2】：函数读取 `data_module/outputs/raw_data.parquet` 文件。
+【功能点3】：进行数据清洗：检查缺失值并删除、将`date`列转换为日期格式、按`symbol`和`date`排序。
+【功能点4】：将清洗后的数据保存到 `data_module/outputs/standard_data.parquet`。
+【输入】：无需参数。
+【输出】：返回清洗后的DataFrame，并保存文件。
+【列名】：保持与输入文件一致。
+```
+
+### 🤖 **策略模块**
+**文件：`model_trainer.py` （组员A）**
+```
+【文件路径】：quant_ml_project/strategy_module/model_trainer.py
+【功能点1】：定义一个名为 `train_model` 的函数。
+【功能点2】：从 `data_module/outputs/standard_data.parquet` 读取数据。
+【功能点3】：准备特征(X)和目标(y)：使用除`date`, `symbol`, `close`外的列作为特征，以`close`列未来5日的涨跌（1涨0跌）作为目标。
+【功能点4】：使用`sklearn`的`RandomForestClassifier`训练一个分类模型。
+【功能点5】：将训练好的模型保存到 `strategy_module/outputs/trained_model.pkl`。
+【输入】：`train_test_split`的比例等参数可从`config/strategy_params.yaml`读取。
+【输出】：返回训练好的模型对象，并保存模型文件。
+```
+
+### 📈 **回测模块**
+**文件：`backtest_engine.py` （组员A）**
+```
+【文件路径】：quant_ml_project/backtest_module/backtest_engine.py
+【功能点1】：定义一个名为 `run_backtest` 的类或函数。
+【功能点2】：从 `strategy_module/outputs/signal.csv` 读取交易信号，从`data_module/outputs/standard_data.parquet`读取价格数据。
+【功能点3】：初始化一个虚拟账户，资金从`config/project_config.py`的`INITIAL_CAPITAL`读取。
+【功能点4】：按日期循环，根据当天的信号执行买入/卖出操作（简化：忽略手续费，以收盘价成交）。
+【功能点5】：记录每天的账户总资产。
+【输出】：返回一个包含日期和资产净值的DataFrame。
+```
+
+---
+
+## 三、 提交工作成果前的“三步自检法”
+
+生成代码后，**不要直接说“我完成了”**，请按此流程检查：
+
+1.  **第一步：独立运行**
+    ```bash
+    cd quant_ml_project  # 首先进入项目文件夹
+    python 你的文件.py    # 运行你的脚本
+    ```
+    **成功标志**：没有红色报错，并打印出“数据已保存到XXX”或类似提示。
+
+2.  **第二步：验证输出**
+    去文件管理器里找到你的代码承诺要生成的文件（如`raw_data.parquet`），**确认它确实存在**，并且不是空文件（文件大小>1KB）。
+
+3.  **第三步：在群里按格式提交**
+    > 【数据组-张三】文件完成并已验证
+    > 文件：`data_fetcher.py`
+    > 功能：已实现从AKShare获取数据，并读取config配置。
+    > 输出文件：`data_module/outputs/raw_data.parquet` （文件大小：XX KB）
+    > **接口就绪**：我的搭档@李四，你可以用你的`data_cleaner.py`读取我这个文件进行测试了。
+
+## 四、 最重要的两条“军规”
+
+1.  **路径是生命线**：所有文件路径**必须**和分工表里写的一模一样。如果你改了，你的搭档就会失败。
+2.  **先跑通，再优化**：第一个目标是生成一个**能跑起来、能生成约定文件**的“简陋”版本。不要追求完美，先保证“有”。
+
+**记住：我们不是AI的考官，我们是AI的“产品经理”**。我们的任务是给它清晰、无歧义的“产品需求文档”（即提示词）。现在，去给你的AI下达第一个精确指令吧！
+
+---
+**（组长可以将此文档保存为 `docs/AI使用指南.md`，并置顶在群公告）**
+
+
 
 ---
 
