@@ -298,8 +298,14 @@ elif page == "模型训练":
                 
                 X_train = X.iloc[:split_idx]
                 X_test = X.iloc[split_idx:]
-                y_train = y.iloc[:split_idx]
-                y_test = y.iloc[split_idx:]
+                
+                # Check if y is None (in case target col was missing or something)
+                if y is not None:
+                    y_train = y.iloc[:split_idx]
+                    y_test = y.iloc[split_idx:]
+                else:
+                    st.error("无法获取目标变量(target)，请检查数据处理步骤。")
+                    st.stop()
                 
                 X_train_scaled, X_test_scaled = preprocessor.normalize_features(X_train, X_test)
                 
