@@ -571,7 +571,7 @@ elif page == "策略回测":
             
             # Using the cached wrapper
             results = cached_run_backtest(
-                df, model, feature_cols,
+                df, _model=model, feature_cols=feature_cols,
                 backtest_start.strftime('%Y-%m-%d'),
                 backtest_end.strftime('%Y-%m-%d'),
                 initial_cash, commission,
