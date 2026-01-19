@@ -293,6 +293,12 @@ class FeatureEngineer:
     def add_target_variable(self, df: pd.DataFrame, prediction_days: int = 5) -> pd.DataFrame:
         df = df.copy()
         
+        # Check if 'stock_code' exists before grouping
+        if 'stock_code' not in df.columns:
+            logger.warning("Column 'stock_code' not found in DataFrame. Target variable will be calculated globally (not recommended for multiple stocks).")
+            # Same safety check as above
+            return df
+
         grouped = df.groupby('stock_code')
         processed_groups = []
         
