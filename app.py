@@ -74,12 +74,13 @@ def downsample_data(df: pd.DataFrame, max_points: int = 1000) -> pd.DataFrame:
     return df.iloc[::int(ratio)]
 
 @st.cache_data(show_spinner="正在加速回测计算...", ttl=3600)
-def cached_run_backtest(df, model, feature_cols, start_date, end_date, 
+def cached_run_backtest(df, _model, feature_cols, start_date, end_date, 
                        initial_cash, commission, buy_threshold, sell_threshold, 
                        stop_loss, max_hold, max_pos_pct, max_pos_count, trailing_stop):
     """
     Cached wrapper for backtest execution.
     Creates a new engine instance to ensure statelessness.
+    Note: _model argument has underscore to prevent hashing
     """
     engine = BacktestEngine(
         initial_cash=initial_cash,
@@ -94,7 +95,7 @@ def cached_run_backtest(df, model, feature_cols, start_date, end_date,
     engine.trailing_stop_pct = trailing_stop
     
     return engine.run_backtest(
-        df, model, feature_cols, start_date, end_date
+        df, _model, feature_cols, start_date, end_date
     )
 
 # -----------------------------------------
