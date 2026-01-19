@@ -571,13 +571,14 @@ elif page == "策略回测":
             
             # Using the cached wrapper
             results = cached_run_backtest(
-                df, _model=model, feature_cols=feature_cols,
-                backtest_start.strftime('%Y-%m-%d'),
-                backtest_end.strftime('%Y-%m-%d'),
-                initial_cash, commission,
-                probability_threshold, sell_threshold, stop_loss_threshold,
-                max_hold_days, max_position_pct / 100, max_positions,
-                trailing_stop_pct
+                df=df, _model=model, feature_cols=feature_cols,
+                start_date=backtest_start.strftime('%Y-%m-%d'),
+                end_date=backtest_end.strftime('%Y-%m-%d'),
+                initial_cash=initial_cash, commission=commission,
+                buy_threshold=probability_threshold, sell_threshold=sell_threshold,
+                stop_loss=stop_loss_threshold, max_hold=max_hold_days,
+                max_pos_pct=max_position_pct / 100, max_pos_count=max_positions,
+                trailing_stop=trailing_stop_pct
             )
             
             # Fetch benchmark (can also be cached or fetcher handles it)
