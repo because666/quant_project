@@ -271,6 +271,12 @@ elif page == "模型训练":
     else:
         df = st.session_state['processed_data']
         
+        # Check if target column exists
+        if 'target' not in df.columns:
+            st.error("⚠️ 检测到数据中缺失目标变量 (target)。")
+            st.info("请前往【数据管理】页面，点击【🔧 处理数据特征】按钮，以生成训练所需的目标变量。")
+            st.stop()
+            
         col1, col2 = st.columns(2)
         
         with col1:
