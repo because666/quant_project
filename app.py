@@ -22,6 +22,17 @@ from feedback_module import show_feedback_page
 from storage import storage
 import tracking
 import admin_dashboard
+import security_dashboard
+from security_manager import security
+
+# --- Security Check (WAF) ---
+# Check Rate Limit (Simulated IP)
+# In real production, we should get real IP from headers
+client_ip = "unknown" # Placeholder
+if not security.check_rate_limit(client_ip):
+    st.error("⚠️ 您的访问频率过高，请稍后再试 (Rate Limit Exceeded)")
+    st.stop()
+# ----------------------------
 
 CONFIG_FILE = Path("backtest_config.json")
 
@@ -75,7 +86,7 @@ with st.sidebar:
     
     page = st.radio(
         "选择功能模块",
-        ["数据管理", "模型训练", "策略回测", "选股预测", "性能分析", "帮助中心", "用户反馈", "网站访问统计"],
+        ["数据管理", "模型训练", "策略回测", "选股预测", "性能分析", "帮助中心", "用户反馈", "网站访问统计", "安全中心"],
         label_visibility="collapsed"
     )
     
@@ -176,7 +187,16 @@ if page == "数据管理":
             height=200,
             help="输入要分析的A股代码，如 600519。支持每行输入一个代码。"
         )
-        stock_codes = [code.strip() for code in stock_list_input.split("\n") if code.strip()]
+        
+        # Security Check for Input
+        is_safe, msg = security.validate_input(stock_list_input)
+        if not is_safe:
+            st.error(f"输入包含非法字符: {msg}")
+            # Don't process
+            stock_codes = []
+        else:
+            stock_codes = [code.strip() for code in stock_list_input.split("\n") if code.strip()]
+            
         st.info(f"当前共 {len(stock_codes)} 只股票")
     
     with col2:
@@ -1075,6 +1095,25 @@ elif page == "网站访问统计":
             st.session_state['admin_logged_in'] = False
             st.rerun()
         admin_dashboard.show_dashboard()
+
+elif page == "安全中心":
+    st.header("🛡️ 安全中心 (管理员)")
+    
+    # Reuse admin login state
+    if 'admin_logged_in' not in st.session_state:
+        st.session_state['admin_logged_in'] = False
+        
+    if not st.session_state['admin_logged_in']:
+        pwd = st.text_input("请输入管理员密码", type="password", key="sec_pwd")
+        if st.button("登录", key="sec_login"):
+            if pwd == "admin": 
+                st.session_state['admin_logged_in'] = True
+                st.rerun()
+            else:
+                st.error("密码错误")
+    
+    if st.session_state['admin_logged_in']:
+        security_dashboard.show_security_dashboard()
 
 st.divider()
 st.markdown("""
