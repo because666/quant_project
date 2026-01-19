@@ -1,3 +1,4 @@
+
 import akshare as ak
 import pandas as pd
 import numpy as np
@@ -7,6 +8,8 @@ import logging
 from tqdm import tqdm
 import ta
 from typing import List, Dict, Any, Optional, Union, Tuple
+import sqlite3
+import streamlit as st
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -16,6 +19,25 @@ class StockDataFetcher:
     def __init__(self, data_dir: Optional[str] = None):
         self.data_dir = Path(data_dir) if data_dir else Path("data")
         self.data_dir.mkdir(exist_ok=True)
+        self.db_path = self.data_dir / "stock_data.db"
+        self.init_db()
+
+    def get_connection(self):
+        return sqlite3.connect(self.db_path, check_same_thread=False)
+
+    def init_db(self):
+        """Initialize SQLite database for stock data."""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        # We store everything in a big table, or one table per stock?
+        # A single table is better for querying "all stocks on date X".
+        # We'll use a generic structure or JSON for flexible columns? 
+        # No, structured is faster. But columns vary.
+        # Let's stick to core columns + JSON for extra, OR just specific columns.
+        # For performance, standard columns are best.
+        
+        # We will dynamically create table from DataFrame in save_to_db
+        conn.close()
 
     def fetch_stock_data(self, stock_code: str, start_date: str, end_date: str) -> Optional[pd.DataFrame]:
         try:
@@ -63,16 +85,11 @@ class StockDataFetcher:
         try:
             stock_code_6 = stock_code.zfill(6)
             
-            # Use a more stable interface for historical PE/PB if possible
-            # Currently akshare.stock_a_indicator_lg is often unstable or removed
-            # Fallback to stock_zh_a_spot_em (realtime) if history fails, or just skip if not available
-            
             # Attempt 1: stock_a_indicator_lg (Legu) - often has issues
             try:
                 if hasattr(ak, 'stock_a_indicator_lg'):
                     df = ak.stock_a_indicator_lg(symbol=stock_code_6)
                 else:
-                    # Fallback or skip
                     return None
             except:
                  return None
@@ -115,27 +132,26 @@ class StockDataFetcher:
             logger.warning(f"Error fetching index data: {e}")
             return None
 
-    def fetch_multiple_stocks(self, stock_codes: List[str], start_date: str, end_date: str) -> pd.DataFrame:
+    @st.cache_data(ttl=3600*12) # Cache for 12 hours
+    def fetch_multiple_stocks(_self, stock_codes: List[str], start_date: str, end_date: str) -> pd.DataFrame:
+        # Note: _self is not hashed by st.cache_data
         all_data = []
         
         # 1. Fetch index data first (common for all)
-        index_df = self.fetch_index_data(start_date, end_date)
+        index_df = _self.fetch_index_data(start_date, end_date)
         
         for stock_code in tqdm(stock_codes, desc="Fetching stock data"):
             # A. Basic Price Data
-            df = self.fetch_stock_data(stock_code, start_date, end_date)
+            df = _self.fetch_stock_data(stock_code, start_date, end_date)
             
             if df is not None:
                 # B. Fundamental Data (Merge)
                 # Try to fetch fundamental data
                 try:
-                    # Fix: self.fetch_fundamental_data is defined, just call it.
-                    # Ensure method name is correct. In Read output, it is defined at line 58.
-                    fun_df = self.fetch_fundamental_data(stock_code)
+                    fun_df = _self.fetch_fundamental_data(stock_code)
                     if fun_df is not None and not fun_df.empty:
                         df = pd.merge(df, fun_df, on='date', how='left')
-                        # Forward fill fundamental data (it doesn't change daily usually)
-                        # Ensure columns exist before filling
+                        # Forward fill fundamental data
                         fun_cols = ['pe_ratio', 'pb_ratio', 'total_market_cap']
                         valid_fun_cols = [c for c in fun_cols if c in df.columns]
                         if valid_fun_cols:
@@ -156,11 +172,51 @@ class StockDataFetcher:
             return pd.DataFrame()
 
     def save_data(self, df: pd.DataFrame, filename: str) -> None:
+        """Save data to CSV and SQLite."""
+        # 1. Save CSV (Backup)
         filepath = self.data_dir / filename
         df.to_csv(filepath, index=False, encoding='utf-8-sig')
         logger.info(f"Data saved to {filepath}")
+        
+        # 2. Save to SQLite (Performance)
+        try:
+            conn = self.get_connection()
+            # If filename is 'stock_data.csv', table is 'stock_data'
+            table_name = filename.replace('.csv', '').replace('.', '_')
+            
+            # Write to DB
+            df.to_sql(table_name, conn, if_exists='replace', index=False)
+            
+            # Create indices
+            cursor = conn.cursor()
+            cursor.execute(f"CREATE INDEX IF NOT EXISTS idx_{table_name}_code_date ON {table_name}(stock_code, date)")
+            conn.commit()
+            conn.close()
+            logger.info(f"Data synced to SQLite table {table_name}")
+        except Exception as e:
+            logger.error(f"Failed to save to SQLite: {e}")
 
     def load_data(self, filename: str) -> Optional[pd.DataFrame]:
+        """Load data from SQLite (preferred) or CSV."""
+        table_name = filename.replace('.csv', '').replace('.', '_')
+        
+        # Try SQLite first
+        try:
+            conn = self.get_connection()
+            # Check if table exists
+            cursor = conn.cursor()
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,))
+            if cursor.fetchone():
+                df = pd.read_sql(f"SELECT * FROM {table_name}", conn)
+                df['date'] = pd.to_datetime(df['date'])
+                conn.close()
+                logger.info(f"Loaded {len(df)} rows from SQLite table {table_name}")
+                return df
+            conn.close()
+        except Exception as e:
+            logger.warning(f"SQLite load failed, falling back to CSV: {e}")
+        
+        # Fallback to CSV
         filepath = self.data_dir / filename
         if filepath.exists():
             df = pd.read_csv(filepath, encoding='utf-8-sig')

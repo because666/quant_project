@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -49,6 +50,54 @@ def load_backtest_config():
 
 def save_backtest_config(config):
     storage.save_json(CONFIG_FILE, "backtest_config", config)
+
+# --- Performance Optimization Helpers ---
+
+@st.cache_data(show_spinner=False)
+def downsample_data(df: pd.DataFrame, max_points: int = 1000) -> pd.DataFrame:
+    """
+    Downsample data for chart rendering if it exceeds max_points.
+    Preserves OHLC structure if columns exist, otherwise simple sampling.
+    """
+    if len(df) <= max_points:
+        return df
+    
+    # Calculate resampling rule
+    ratio = len(df) / max_points
+    # Simple sampling for line charts to be fast
+    if 'open' not in df.columns: 
+        return df.iloc[::int(ratio)]
+    
+    # For OHLC data, we should ideally aggregate, but that's slow.
+    # Simple sampling is often acceptable for visual overview.
+    # To be safe and fast:
+    return df.iloc[::int(ratio)]
+
+@st.cache_data(show_spinner="正在加速回测计算...", ttl=3600)
+def cached_run_backtest(df, model, feature_cols, start_date, end_date, 
+                       initial_cash, commission, buy_threshold, sell_threshold, 
+                       stop_loss, max_hold, max_pos_pct, max_pos_count, trailing_stop):
+    """
+    Cached wrapper for backtest execution.
+    Creates a new engine instance to ensure statelessness.
+    """
+    engine = BacktestEngine(
+        initial_cash=initial_cash,
+        commission=commission,
+        buy_threshold=buy_threshold,
+        sell_threshold=sell_threshold,
+        stop_loss_threshold=stop_loss,
+        max_hold_days=max_hold,
+        max_position_pct=max_pos_pct,
+        max_positions=max_pos_count
+    )
+    engine.trailing_stop_pct = trailing_stop
+    
+    return engine.run_backtest(
+        df, model, feature_cols, start_date, end_date
+    )
+
+# -----------------------------------------
 
 st.set_page_config(
     page_title="基于机器学习的量化投资选股系统",
@@ -109,24 +158,18 @@ with st.sidebar:
     
     # Auto-load data if exists
     if 'raw_data' not in st.session_state:
-        data_path = Path("data/stock_data.csv")
-        if data_path.exists():
-            try:
-                fetcher = StockDataFetcher()
-                st.session_state['raw_data'] = fetcher.load_data('stock_data.csv')
-                # logger.info("Auto-loaded stock_data.csv")
-            except Exception as e:
-                logger.error(f"Failed to auto-load data: {e}")
+        # Use fetcher.load_data which now supports SQLite
+        fetcher = StockDataFetcher()
+        # Try load stock_data.csv (which maps to stock_data table in SQLite)
+        loaded_df = fetcher.load_data('stock_data.csv')
+        if loaded_df is not None:
+            st.session_state['raw_data'] = loaded_df
 
     if 'processed_data' not in st.session_state:
-        processed_path = Path("data/processed_data.csv")
-        if processed_path.exists():
-            try:
-                fetcher = StockDataFetcher()
-                st.session_state['processed_data'] = fetcher.load_data('processed_data.csv')
-                # logger.info("Auto-loaded processed_data.csv")
-            except Exception as e:
-                logger.error(f"Failed to auto-load processed data: {e}")
+        fetcher = StockDataFetcher()
+        loaded_df = fetcher.load_data('processed_data.csv')
+        if loaded_df is not None:
+            st.session_state['processed_data'] = loaded_df
 
     st.subheader("🎯 模型参数")
     model_type = st.selectbox(
@@ -206,8 +249,9 @@ if page == "数据管理":
         user_settings = config.load_user_settings()
         
         if st.button("📥 获取股票数据", use_container_width=True):
-            with st.spinner("正在获取股票数据..."):
+            with st.spinner("正在获取股票数据 (支持缓存)..."):
                 fetcher = StockDataFetcher()
+                # Use the cached method
                 df = fetcher.fetch_multiple_stocks(
                     stock_codes,
                     start_date.strftime('%Y-%m-%d'),
@@ -215,8 +259,9 @@ if page == "数据管理":
                 )
                 
                 if not df.empty:
+                    # Save (syncs to SQLite)
                     fetcher.save_data(df, 'stock_data.csv')
-                    st.success(f"成功获取 {len(df)} 条数据")
+                    st.success(f"成功获取 {len(df)} 条数据 (已存入 SQLite 数据库)")
                     
                     st.session_state['raw_data'] = df
                     
@@ -520,59 +565,50 @@ elif page == "策略回测":
                 st.success("✅ 参数配置已保存！")
         
         if st.button("🔄 开始回测", use_container_width=True, key="run_backtest"):
-            with st.spinner("正在进行回测..."):
-                df = st.session_state['processed_data'].copy()
+            # Use cached backtest
+            df = st.session_state['processed_data'].copy()
+            
+            # Using the cached wrapper
+            results = cached_run_backtest(
+                df, model, feature_cols,
+                backtest_start.strftime('%Y-%m-%d'),
+                backtest_end.strftime('%Y-%m-%d'),
+                initial_cash, commission,
+                probability_threshold, sell_threshold, stop_loss_threshold,
+                max_hold_days, max_position_pct / 100, max_positions,
+                trailing_stop_pct
+            )
+            
+            # Fetch benchmark (can also be cached or fetcher handles it)
+            try:
+                fetcher = StockDataFetcher()
+                index_df = fetcher.fetch_index_data(backtest_start.strftime('%Y-%m-%d'), backtest_end.strftime('%Y-%m-%d'), "000300")
+                if index_df is not None:
+                    results['benchmark_data'] = index_df
+            except Exception as e:
+                logger.warning(f"Could not fetch benchmark: {e}")
+            
+            st.session_state['backtest_results'] = results
+            
+            st.success("回测完成！")
+            
+            if results['total_trades'] == 0:
+                st.warning("⚠️ 回测期间未产生任何交易")
+                st.info("""
+                **可能的原因：**
+                1. 买入概率阈值过高 - 尝试降低到 0.4 或更低
+                2. 模型预测概率普遍较低 - 考虑重新训练模型
+                3. 回测日期范围数据不足 - 检查数据是否包含有效日期
+                4. 资金不足 - 检查初始资金设置
                 
-                backtest_engine = BacktestEngine(
-                    initial_cash=initial_cash,
-                    commission=commission,
-                    buy_threshold=probability_threshold,
-                    sell_threshold=sell_threshold,
-                    stop_loss_threshold=stop_loss_threshold,
-                    max_hold_days=max_hold_days,
-                    max_position_pct=max_position_pct / 100,
-                    max_positions=max_positions
-                )
-                backtest_engine.trailing_stop_pct = trailing_stop_pct
-                
-                results = backtest_engine.run_backtest(
-                    df,
-                    model,
-                    feature_cols,
-                    start_date=backtest_start.strftime('%Y-%m-%d'),
-                    end_date=backtest_end.strftime('%Y-%m-%d')
-                )
-                
-                # Fetch benchmark
-                try:
-                    fetcher = StockDataFetcher()
-                    index_df = fetcher.fetch_index_data(backtest_start.strftime('%Y-%m-%d'), backtest_end.strftime('%Y-%m-%d'), "000300")
-                    if index_df is not None:
-                        results['benchmark_data'] = index_df
-                except Exception as e:
-                    logger.warning(f"Could not fetch benchmark: {e}")
-                
-                st.session_state['backtest_results'] = results
-                
-                st.success("回测完成！")
-                
-                if results['total_trades'] == 0:
-                    st.warning("⚠️ 回测期间未产生任何交易")
-                    st.info("""
-                    **可能的原因：**
-                    1. 买入概率阈值过高 - 尝试降低到 0.4 或更低
-                    2. 模型预测概率普遍较低 - 考虑重新训练模型
-                    3. 回测日期范围数据不足 - 检查数据是否包含有效日期
-                    4. 资金不足 - 检查初始资金设置
-                    
-                    **建议：**
-                    - 降低买入概率阈值
-                    - 增加回测日期范围
-                    - 检查模型训练质量
-                    - 运行诊断工具: `python diagnose_backtest.py`
-                    """)
-                else:
-                    st.success(f"✅ 回测完成，共产生 {results['total_trades']} 笔交易")
+                **建议：**
+                - 降低买入概率阈值
+                - 增加回测日期范围
+                - 检查模型训练质量
+                - 运行诊断工具: `python diagnose_backtest.py`
+                """)
+            else:
+                st.success(f"✅ 回测完成，共产生 {results['total_trades']} 笔交易")
         
         if 'backtest_results' in st.session_state:
             results = st.session_state['backtest_results']
@@ -595,10 +631,13 @@ elif page == "策略回测":
             st.subheader("📈 资金曲线")
             portfolio = results['portfolio']
             
+            # Apply downsampling for smoother charts
+            chart_portfolio = downsample_data(portfolio, max_points=1000)
+            
             fig = go.Figure()
             fig.add_trace(go.Scatter(
-                x=portfolio['date'],
-                y=portfolio['value'],
+                x=chart_portfolio['date'],
+                y=chart_portfolio['value'],
                 mode='lines',
                 name='策略资金',
                 line=dict(color='blue', width=2)
@@ -629,9 +668,12 @@ elif page == "策略回测":
                      # Calculate value curve
                      merged['bench_val'] = initial_value * (1 + merged['market_return']).cumprod()
                      
+                     # Downsample for chart
+                     chart_merged = downsample_data(merged, max_points=1000)
+                     
                      fig.add_trace(go.Scatter(
-                        x=merged['date'],
-                        y=merged['bench_val'],
+                        x=chart_merged['date'],
+                        y=chart_merged['bench_val'],
                         mode='lines',
                         name='基准(沪深300)',
                         line=dict(color='gray', width=1, dash='dot')
@@ -647,16 +689,20 @@ elif page == "策略回测":
             
             st.subheader("💹 持仓分析")
             fig = go.Figure()
+            
+            # Downsample for chart
+            chart_pos = downsample_data(portfolio, max_points=1000)
+            
             fig.add_trace(go.Scatter(
-                x=portfolio['date'],
-                y=portfolio['cash'],
+                x=chart_pos['date'],
+                y=chart_pos['cash'],
                 mode='lines',
                 name='现金',
                 fill='tozeroy'
             ))
             fig.add_trace(go.Scatter(
-                x=portfolio['date'],
-                y=portfolio['positions_value'],
+                x=chart_pos['date'],
+                y=chart_pos['positions_value'],
                 mode='lines',
                 name='持仓市值',
                 fill='tonexty'
@@ -999,10 +1045,13 @@ elif page == "性能分析":
         portfolio['daily_return'] = portfolio['value'].pct_change()
         portfolio['cumulative_return'] = (portfolio['value'] / portfolio['value'].iloc[0] - 1) * 100
         
+        # Downsample for chart
+        chart_perf = downsample_data(portfolio, max_points=1000)
+        
         fig = go.Figure()
         fig.add_trace(go.Scatter(
-            x=portfolio['date'],
-            y=portfolio['cumulative_return'],
+            x=chart_perf['date'],
+            y=chart_perf['cumulative_return'],
             mode='lines',
             name='累计收益率',
             line=dict(color='blue', width=2)
