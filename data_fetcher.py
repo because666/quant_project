@@ -240,12 +240,21 @@ class FeatureEngineer:
         # Fix: Sort by date before filling to prevent data leakage (using future data to fill past)
         # And ensure we don't mix stocks
         combined_df = combined_df.sort_values(['stock_code', 'date'])
-        combined_df = combined_df.groupby('stock_code').ffill().bfill()
-        # After fill, restore stock_code if it was lost in groupby apply (sometimes happens with transform)
-        # Actually groupby().ffill() preserves index.
-        # But safest is to fill within groups
         
-        return combined_df
+        # Groupby ffill/bfill might drop the grouper column 'stock_code'
+        # We need to preserve it.
+        # Strategy: Apply fill only to feature columns, then combine with stock_code/date
+        
+        # Or simply:
+        combined_df_filled = combined_df.groupby('stock_code').ffill().bfill()
+        
+        # Restore stock_code and date if lost
+        if 'stock_code' not in combined_df_filled.columns:
+            combined_df_filled['stock_code'] = combined_df['stock_code']
+        if 'date' not in combined_df_filled.columns:
+            combined_df_filled['date'] = combined_df['date']
+            
+        return combined_df_filled
 
     def add_return_features(self, df: pd.DataFrame, lookback_days: List[int] = [1, 3, 5, 10, 20]) -> pd.DataFrame:
         df = df.copy()
