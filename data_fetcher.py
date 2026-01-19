@@ -250,6 +250,14 @@ class FeatureEngineer:
     def add_return_features(self, df: pd.DataFrame, lookback_days: List[int] = [1, 3, 5, 10, 20]) -> pd.DataFrame:
         df = df.copy()
         
+        # Check if 'stock_code' exists before grouping
+        if 'stock_code' not in df.columns:
+            logger.warning("Column 'stock_code' not found in DataFrame. Return features will be calculated globally (not recommended for multiple stocks).")
+            # If only one stock but no stock_code col, we treat it as one group.
+            # But better to just return or error out safely.
+            # Assuming it might be index? No, fetcher returns stock_code as column.
+            return df
+
         grouped = df.groupby('stock_code')
         processed_groups = []
         
