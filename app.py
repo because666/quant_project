@@ -20,6 +20,8 @@ import config
 from help_module import show_help_page
 from feedback_module import show_feedback_page
 from storage import storage
+import tracking
+import admin_dashboard
 
 CONFIG_FILE = Path("backtest_config.json")
 
@@ -73,9 +75,14 @@ with st.sidebar:
     
     page = st.radio(
         "选择功能模块",
-        ["数据管理", "模型训练", "策略回测", "选股预测", "性能分析", "帮助中心", "用户反馈"],
+        ["数据管理", "模型训练", "策略回测", "选股预测", "性能分析", "帮助中心", "用户反馈", "网站访问统计"],
         label_visibility="collapsed"
     )
+    
+    st.divider()
+    
+    # Render privacy settings
+    tracking.render_privacy_settings()
     
     st.divider()
     
@@ -142,6 +149,9 @@ with st.sidebar:
         format="%.4f",
         help="每笔交易的佣金费率（例如0.0003表示万分之三）"
     )
+
+# Track page visit
+tracking.track_page_visit(page)
 
 if page == "数据管理":
     st.header("📊 数据管理")
@@ -1031,6 +1041,28 @@ elif page == "帮助中心":
 
 elif page == "用户反馈":
     show_feedback_page()
+
+elif page == "网站访问统计":
+    st.header("📊 网站访问统计 (管理员)")
+    
+    # Simple password protection
+    if 'admin_logged_in' not in st.session_state:
+        st.session_state['admin_logged_in'] = False
+        
+    if not st.session_state['admin_logged_in']:
+        pwd = st.text_input("请输入管理员密码", type="password")
+        if st.button("登录"):
+            if pwd == "admin":  # Default password, user should change this
+                st.session_state['admin_logged_in'] = True
+                st.rerun()
+            else:
+                st.error("密码错误")
+    
+    if st.session_state['admin_logged_in']:
+        if st.button("退出登录"):
+            st.session_state['admin_logged_in'] = False
+            st.rerun()
+        admin_dashboard.show_dashboard()
 
 st.divider()
 st.markdown("""
