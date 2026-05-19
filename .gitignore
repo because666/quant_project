@@ -71,11 +71,8 @@ Thumbs.db
 # Source map files - 仅开发时需要
 *.map
 
-# 大文件 - 超过GitHub 100MB限制
-backend/data/query_smoke_out/*.parquet
-backend/data/query_smoke_out/*.parquet.gz
-
-# 训练数据文件（太大，不提交到GitHub）
+# 大文件 - 原始数据文件已分卷压缩为data_archives/
+# 使用 extract_data.py 解压还原
 backend/data/*.parquet
 backend/data/*.parquet.gz
 backend/data/*.pkl
@@ -83,8 +80,10 @@ backend/data/qlib_cn_data/
 backend/data/backtest_results/*.parquet
 backend/data/experiment2/*.parquet
 backend/data/experiment4/*.parquet
+backend/data/query_smoke_out/*.parquet
+backend/data/query_smoke_out/*.parquet.gz
 
-# 模型文件（太大）
+# 模型文件（太大，已分卷压缩）
 backend/models/*.txt
 backend/models/*.pkl
 backend/models/*.bin
