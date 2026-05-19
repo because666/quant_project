@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>基于收益感知排序学习与多模型融合的量化选股策略研究 - 论文写作全流程指南</title>
+<style>
+  @page {
+    size: A4;
+    margin: 2cm;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Microsoft YaHei", "SimSun", "PingFang SC", sans-serif;
+    font-size: 11pt;
+    line-height: 1.8;
+    color: #1a1a1a;
+    max-width: 210mm;
+    margin: 0 auto;
+    padding: 2cm;
+    background: #fff;
+  }
+  @media print {
+    body { padding: 0; }
+    .page-break { page-break-before: always; }
+    .no-break { page-break-inside: avoid; }
+  }
+  h1 {
+    font-size: 20pt;
+    text-align: center;
+    color: #1a3a5c;
+    border-bottom: 3px solid #1a3a5c;
+    padding-bottom: 12px;
+    margin-top: 40px;
+    margin-bottom: 20px;
+  }
+  h2 {
+    font-size: 16pt;
+    color: #2c5282;
+    border-left: 5px solid #2c5282;
+    padding-left: 12px;
+    margin-top: 30px;
+    margin-bottom: 15px;
+  }
+  h3 {
+    font-size: 13pt;
+    color: #2d3748;
+    margin-top: 22px;
+    margin-bottom: 10px;
+  }
+  h4 {
+    font-size: 11.5pt;
+    color: #4a5568;
+    margin-top: 16px;
+    margin-bottom: 8px;
+  }
+  p { margin: 8px 0; text-align: justify; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 10pt;
+  }
+  th, td {
+    border: 1px solid #cbd5e0;
+    padding: 6px 10px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: #edf2f7;
+    font-weight: bold;
+    color: #2d3748;
+  }
+  tr:nth-child(even) { background: #f7fafc; }
+  code {
+    background: #edf2f7;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 10pt;
+    color: #c53030;
+  }
+  pre {
+    background: #1a202c;
+    color: #e2e8f0;
+    padding: 14px 18px;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-size: 9.5pt;
+    line-height: 1.6;
+    margin: 12px 0;
+  }
+  pre code {
+    background: none;
+    color: #e2e8f0;
+    padding: 0;
+  }
+  .cover {
+    text-align: center;
+    padding: 80px 0 40px 0;
+  }
+  .cover h1 {
+    font-size: 24pt;
+    border: none;
+    line-height: 1.5;
+    margin-bottom: 30px;
+  }
+  .cover .subtitle {
+    font-size: 14pt;
+    color: #4a5568;
+    margin: 20px 0;
+  }
+  .cover .date {
+    font-size: 12pt;
+    color: #718096;
+    margin-top: 40px;
+  }
+  .highlight-box {
+    background: #ebf8ff;
+    border: 1px solid #90cdf4;
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin: 14px 0;
+  }
+  .warning-box {
+    background: #fffaf0;
+    border: 1px solid #fbd38d;
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin: 14px 0;
+  }
+  .success-box {
+    background: #f0fff4;
+    border: 1px solid #9ae6b4;
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin: 14px 0;
+  }
+  .toc {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 20px 30px;
+    margin: 20px 0;
+  }
+  .toc a {
+    color: #2c5282;
+    text-decoration: none;
+  }
+  .toc a:hover { text-decoration: underline; }
+  .toc ul { list-style: none; padding-left: 0; }
+  .toc ul ul { padding-left: 20px; }
+  .toc li { margin: 4px 0; }
+  .star { color: #e53e3e; }
+  .checklist { list-style: none; padding-left: 0; }
+  .checklist li { margin: 4px 0; }
+  .checklist li::before { content: "☐ "; font-size: 12pt; }
+  .flow-arrow {
+    text-align: center;
+    font-size: 14pt;
+    color: #2c5282;
+    margin: 6px 0;
+    font-weight: bold;
+  }
+  .formula {
+    background: #f7fafc;
+    border-left: 3px solid #2c5282;
+    padding: 10px 16px;
+    margin: 12px 0;
+    font-family: "Cambria Math", "Times New Roman", serif;
+    font-size: 11pt;
+    overflow-x: auto;
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 9pt;
+    font-weight: bold;
+    color: #fff;
+  }
+  .badge-p0 { background: #e53e3e; }
+  .badge-p1 { background: #dd6b20; }
+  .badge-p2 { background: #38a169; }
+  .badge-star5 { background: #e53e3e; }
+  .badge-star4 { background: #dd6b20; }
+  .badge-star3 { background: #d69e2e; }
+  .badge-star2 { background: #38a169; }
+  .badge-star1 { background: #4299e1; }
+  .timeline {
+    border-left: 3px solid #2c5282;
+    padding-left: 20px;
+    margin: 16px 0;
+  }
+  .timeline-item {
+    margin: 12px 0;
+    position: relative;
+  }
+  .timeline-item::before {
+    content: "";
+    position: absolute;
+    left: -26px;
+    top: 6px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #2c5282;
+  }
+  .timeline-item.active::before { background: #e53e3e; }
+  .timeline-week {
+    font-weight: bold;
+    color: #2c5282;
+    font-size: 11.5pt;
+  }
+  .footer {
+    text-align: center;
+    color: #a0aec0;
+    font-size: 9pt;
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid #e2e8f0;
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== 封面 ==================== -->
+<div class="cover">
+  <h1>基于收益感知排序学习与多模型融合的<br>量化选股策略研究</h1>
+  <div class="subtitle">论文写作全流程指南</div>
+  <div class="subtitle" style="font-size:12pt; color:#718096;">包含：必读论文 · 实验设计 · 写作流程 · 投稿指南</div>
+  <div class="date">2026年5月</div>
+</div>
+
+<!-- ==================== 目录 ==================== -->
+<div class="page-break"></div>
+<div class="toc">
+<h2 style="border:none; padding:0; margin-top:0;">📋 目录</h2>
+<ul>
+  <li><strong>第一部分：论文概览</strong>
+    <ul>
+      <li>1.1 论文基本信息</li>
+      <li>1.2 三大创新点</li>
+      <li>1.3 创新点之间的逻辑关系</li>
+    </ul>
+  </li>
+  <li><strong>第二部分：必读论文清单</strong>
+    <ul>
+      <li>2.1 阅读顺序与优先级（三阶段）</li>
+      <li>2.2 论文阅读方法建议</li>
+    </ul>
+  </li>
+  <li><strong>第三部分：实验设计</strong>
+    <ul>
+      <li>3.1 实验总览</li>
+      <li>3.2 实验数据与参数</li>
+      <li>3.3 实验1：收益-夏普感知损失函数对比</li>
+      <li>3.4 实验2：多模型排序融合对比</li>
+      <li>3.5 实验3：LLM可解释推荐效果评估</li>
+      <li>3.6 实验4：多维度排序框架综合对比</li>
+      <li>3.7 实验结果呈现方式</li>
+    </ul>
+  </li>
+  <li><strong>第四部分：论文写作流程</strong>
+    <ul>
+      <li>4.1 时间线（8-10周详细计划）</li>
+      <li>4.2 论文结构模板</li>
+      <li>4.3 写作工具与规范</li>
+    </ul>
+  </li>
+  <li><strong>第五部分：需要准备的东西</strong>
+    <ul>
+      <li>5.1 投稿前准备清单</li>
+      <li>5.2 合作者分工建议</li>
+      <li>5.3 论文写作常见陷阱</li>
+    </ul>
+  </li>
+  <li><strong>第六部分：论文投稿流程</strong></li>
+  <li><strong>第七部分：关键公式汇总</strong></li>
+  <li><strong>附录：阅读记录表 · 实验记录表 · 重要提醒</strong></li>
+</ul>
+</div>
+
+<!-- ==================== 第一部分 ==================== -->
+<div class="page-break"></div>
+<h1>第一部分：论文概览</h1>
+
+<h2>1.1 论文基本信息</h2>
+<table>
+  <tr><th style="width:25%;">项目</th><th>内容</th></tr>
+  <tr><td><strong>论文标题</strong></td><td>基于收益感知排序学习与多模型融合的量化选股策略研究</td></tr>
+  <tr><td><strong>英文标题</strong></td><td>Return-Aware Learning to Rank with Multi-Model Fusion for Quantitative Stock Selection</td></tr>
+  <tr><td><strong>论文类型</strong></td><td>会议论文</td></tr>
+  <tr><td><strong>研究方向</strong></td><td>量化投资 × 排序学习 × 可解释AI</td></tr>
+</table>
+
+<h2>1.2 三大创新点</h2>
+<table>
+  <tr><th>编号</th><th>创新点</th><th>创新类型</th><th>核心贡献</th></tr>
+  <tr><td>①</td><td>收益-夏普感知排序损失函数</td><td>修改创新</td><td>将金融收益目标直接嵌入排序损失函数，使排序优化与投资目标对齐</td></tr>
+  <tr><td>②</td><td>RRF多模型排序融合 + LLM可解释推荐</td><td>融合创新</td><td>排序级融合提升选股稳定性，LLM注入特征解释实现可解释推荐</td></tr>
+  <tr><td>③</td><td>多维度排序学习框架对比评估</td><td>比较创新</td><td>系统对比4种排序方法在A股的表现，给出场景适配建议</td></tr>
+</table>
+
+<h2>1.3 创新点之间的逻辑关系</h2>
+<div class="highlight-box">
+  <p><strong>创新点①</strong>（更好的损失函数）→ 训练出更优的排序模型</p>
+  <p><strong>创新点②</strong>（多模型融合 + AI解读）→ 融合多个模型的排序结果，用LLM解释推荐逻辑</p>
+  <p><strong>创新点③</strong>（系统对比评估）→ 用严格实验证明上述方法的有效性</p>
+  <p style="margin-top:12px; font-weight:bold; color:#2c5282;">故事线：更好的优化目标 → 更稳定的融合策略 → 更透明的决策解释 → 严格的实验验证</p>
+</div>
+
+<!-- ==================== 第二部分 ==================== -->
+<div class="page-break"></div>
+<h1>第二部分：必读论文清单</h1>
+
+<h2>2.1 第一阶段：基础必读（写论文前必须读完）</h2>
+<p>预计阅读时间：<strong>约13小时</strong></p>
+
+<table>
+  <tr><th>序号</th><th>论文</th><th>为什么必读</th><th>查阅方式</th><th>时间</th></tr>
+  <tr>
+    <td>B1</td>
+    <td><strong>Burges, C. (2010). From RankNet to LambdaRank to LambdaMART: An Overview</strong></td>
+    <td>LambdaRank算法原理的权威文献，论文核心算法基础</td>
+    <td>Microsoft Research技术报告<br><code>https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/MSR-TR-2010-82.pdf</code></td>
+    <td>3h</td>
+  </tr>
+  <tr>
+    <td>B2</td>
+    <td><strong>Ke, G. et al. (2017). LightGBM: A Highly Efficient Gradient Boosting Decision Tree</strong></td>
+    <td>项目使用的LightGBM原始论文</td>
+    <td>NeurIPS 2017<br>DOI: <code>10.5555/3294996.3295072</code><br>Google Scholar搜索标题</td>
+    <td>2h</td>
+  </tr>
+  <tr>
+    <td>B3</td>
+    <td><strong>Chen, T. & Guestrin, C. (2016). XGBoost: A Scalable Tree Boosting System</strong></td>
+    <td>项目使用的XGBoost原始论文</td>
+    <td>KDD 2016<br>DOI: <code>10.1145/2939672.2939785</code><br>Google Scholar搜索标题</td>
+    <td>2h</td>
+  </tr>
+  <tr>
+    <td>B4</td>
+    <td><strong>Gu, S., Kelly, B. & Xiu, D. (2020). Empirical Asset Pricing via Machine Learning</strong></td>
+    <td>量化选股ML领域引用最高论文，必引</td>
+    <td>Review of Financial Studies<br>DOI: <code>10.1093/rfs/hhaa009</code></td>
+    <td>4h</td>
+  </tr>
+  <tr>
+    <td>B5</td>
+    <td><strong>Song, Q. et al. (2017). A Learning-to-Rank Approach for Stock Portfolio Optimization</strong></td>
+    <td>首次系统将LTR引入选股，直接前驱工作</td>
+    <td>AAAI Workshop<br>arXiv: <code>1710.01463</code><br><code>https://arxiv.org/abs/1710.01463</code></td>
+    <td>2h</td>
+  </tr>
+</table>
+
+<h2>2.2 第二阶段：创新点相关（写作过程中精读）</h2>
+<p>预计阅读时间：<strong>约20小时</strong></p>
+
+<h3>创新点①相关——排序损失函数改进</h3>
+<table>
+  <tr><th>序号</th><th>论文</th><th>关键启发</th><th>查阅方式</th></tr>
+  <tr><td>C1</td><td><strong>Wang, H. et al. (2022). Stock Selection via Learning to Rank: A Cross-Sectional Approach</strong></td><td>LambdaMART在A股的应用，直接对比对象</td><td>Expert Systems with Applications, DOI: <code>10.1016/j.eswa.2022.117456</code></td></tr>
+  <tr><td>C2</td><td><strong>Chen, Z. et al. (2021). Applying LambdaMART for Stock Ranking in Chinese A-Share Market</strong></td><td>LambdaMART在A股的实证，损失函数讨论</td><td>Quantitative Finance, DOI: <code>10.1080/14697688.2021.1909382</code></td></tr>
+  <tr><td>C3</td><td><strong>Feng, G. et al. (2023). Deep Learning for Cross-Sectional Stock Return Prediction</strong></td><td>深度学习+排序方法的结合思路</td><td>Management Science, DOI: <code>10.1287/mnsc.2023.4900</code></td></tr>
+  <tr><td>C4</td><td><strong>西南证券 (2025). 基于排序学习的选股增强策略</strong></td><td>国内券商对LambdaRank选股的实践报告</td><td>新浪财经搜索标题，或Wind/券商研报平台下载</td></tr>
+</table>
+
+<h3>创新点②相关——模型融合与LLM推荐</h3>
+<table>
+  <tr><th>序号</th><th>论文</th><th>关键启发</th><th>查阅方式</th></tr>
+  <tr><td>C5</td><td><strong>Cormack, G. et al. Reciprocal Rank Fusion Outperforms Condorcet and Individual Rank Learning Methods</strong></td><td>RRF融合方法的核心论文，方法理论依据</td><td>SIGIR 2009，Google Scholar搜索标题</td></tr>
+  <tr><td>C6</td><td><strong>Yang, H. et al. (2023). FinGPT: Open-Source Financial Large Language Models</strong></td><td>金融LLM的开源方案</td><td>CIKM 2023, arXiv: <code>2306.06031</code>, <code>https://arxiv.org/abs/2306.06031</code></td></tr>
+  <tr><td>C7</td><td><strong>Xie, Q. et al. (2024). Can Large Language Models Explain Financial Market Movements?</strong></td><td>LLM解释金融市场的方法论</td><td>arXiv: <code>2401.17884</code>, <code>https://arxiv.org/abs/2401.17884</code></td></tr>
+  <tr><td>C8</td><td><strong>Bao, W. et al. (2022). Explainable AI in Finance: A Survey</strong></td><td>金融可解释AI综述</td><td>arXiv: <code>2209.09762</code>, <code>https://arxiv.org/abs/2209.09762</code></td></tr>
+</table>
+
+<h3>创新点③相关——对比评估框架</h3>
+<table>
+  <tr><th>序号</th><th>论文</th><th>关键启发</th><th>查阅方式</th></tr>
+  <tr><td>C9</td><td><strong>Lopez de Prado, M. (2018). Advances in Financial Machine Learning</strong></td><td>金融ML回测规范、Purged K-Fold、前视偏差防控</td><td>书籍（Wiley出版），第7-9章必读</td></tr>
+  <tr><td>C10</td><td><strong>Harvey, C. et al. (2016). ...and the Cross-Section of Expected Returns</strong></td><td>因子多重检验问题，t统计量阈值应提升至3.0</td><td>Review of Financial Studies, DOI: <code>10.1093/rfs/hhv059</code></td></tr>
+  <tr><td>C11</td><td><strong>StockRanker: A Novelty Three-Stage Ranking Model Based on Deep Learning for Stock Selection</strong></td><td>深度学习排序选股的对比基线</td><td>ResearchGate搜索标题</td></tr>
+</table>
+
+<h2>2.3 第三阶段：拓展选读（投稿前补充引用）</h2>
+<p>预计阅读时间：<strong>约10小时</strong></p>
+<table>
+  <tr><th>序号</th><th>论文</th><th>用途</th><th>查阅方式</th></tr>
+  <tr><td>E1</td><td><strong>Wu, S. et al. (2023). BloombergGPT: A Large Language Model for Finance</strong></td><td>补充LLM金融应用的背景引用</td><td>arXiv: <code>2303.17564</code></td></tr>
+  <tr><td>E2</td><td><strong>Gu, S., Kelly, B. & Xiu, D. (2021). Autoencoder Asset Pricing Models</strong></td><td>补充因子挖掘方法的背景引用</td><td>Journal of Econometrics, DOI: <code>10.1016/j.jeconom.2020.07.009</code></td></tr>
+  <tr><td>E3</td><td><strong>McLean, R. & Pontiff, J. (2016). Does Academic Research Destroy Stock Return Predictability?</strong></td><td>补充因子衰减的讨论</td><td>Journal of Finance, DOI: <code>10.1111/jofi.12365</code></td></tr>
+  <tr><td>E4</td><td><strong>Lundberg, S. & Lee, S. (2017). A Unified Approach to Interpreting Model Predictions (SHAP)</strong></td><td>补充可解释性方法的技术引用</td><td>NeurIPS 2017，Google Scholar搜索标题</td></tr>
+  <tr><td>E5</td><td><strong>Bailey, D. & Lopez de Prado, M. (2014). The Deflated Sharpe Ratio</strong></td><td>补充回测过拟合校正的方法引用</td><td>Journal of Portfolio Management, DOI: <code>10.3905/jpm.2014.40.3.094</code></td></tr>
+</table>
+
+<h2>2.4 论文阅读方法建议</h2>
+<div class="success-box">
+  <p><strong>第一遍：快速浏览</strong>（每篇30分钟）— 只读标题、摘要、结论、图表，判断相关性</p>
+  <p><strong>第二遍：精读核心</strong>（每篇2-3小时）— 重点关注方法设计、实验设置、评估指标，记录创新点和局限性</p>
+  <p><strong>第三遍：写作时引用</strong>（按需）— 写论文时引用具体公式、数据、结论时再回头精读</p>
+</div>
+
+<h3>阅读笔记模板</h3>
+<pre><code>论文标题：
+作者：
+发表年份/期刊：
+核心问题：
+方法概述：
+关键创新点：
+实验数据集：
+评估指标：
+主要结论：
+局限性：
+与本文的关联：
+可引用的具体内容（公式/数据/结论）：</code></pre>
+
+<!-- ==================== 第三部分 ==================== -->
+<div class="page-break"></div>
+<h1>第三部分：实验设计</h1>
+
+<h2>3.1 实验总览</h2>
+<table>
+  <tr><th>实验编号</th><th>实验名称</th><th>验证目标</th><th>对应创新点</th></tr>
+  <tr><td>Exp-1</td><td>收益-夏普感知损失函数对比</td><td>证明改进损失函数有效</td><td>①</td></tr>
+  <tr><td>Exp-2</td><td>多模型排序融合对比</td><td>证明RRF融合优于单模型</td><td>②</td></tr>
+  <tr><td>Exp-3</td><td>LLM可解释推荐效果评估</td><td>证明AI解读的实用价值</td><td>②</td></tr>
+  <tr><td>Exp-4</td><td>多维度排序框架综合对比</td><td>系统评估4种方法</td><td>③</td></tr>
+</table>
+
+<h2>3.2 实验数据与参数</h2>
+<h3>数据集</h3>
+<table>
+  <tr><th>参数</th><th>设置</th><th>说明</th></tr>
+  <tr><td>股票池</td><td>近10年存续A股约3000只</td><td>项目已有 stock_pool.py</td></tr>
+  <tr><td>数据频率</td><td>周频截面（每周最后一个交易日）</td><td>项目已有 data_loader.py</td></tr>
+  <tr><td>训练集</td><td>2015-01 至 2020-12</td><td>约6年</td></tr>
+  <tr><td>验证集</td><td>2021-01 至 2022-06</td><td>约1.5年</td></tr>
+  <tr><td>测试集</td><td>2022-07 至 2024-12</td><td>约2.5年</td></tr>
+  <tr><td>因子数量</td><td>22个基础因子</td><td>项目已有 feature_engineering.py</td></tr>
+</table>
+
+<h3>回测参数（所有实验统一）</h3>
+<table>
+  <tr><th>参数</th><th>设置</th></tr>
+  <tr><td>初始资金</td><td>100万元</td></tr>
+  <tr><td>调仓频率</td><td>周频</td></tr>
+  <tr><td>选股数量（Top N）</td><td>10只、20只、50只（三组对比）</td></tr>
+  <tr><td>交易规则</td><td>T+1</td></tr>
+  <tr><td>佣金</td><td>双边万三（0.03%）</td></tr>
+  <tr><td>印花税</td><td>卖出单边万五（0.05%）</td></tr>
+  <tr><td>滑点</td><td>双边0.1%</td></tr>
+  <tr><td>涨跌停限制</td><td>涨停无法买入、跌停无法卖出</td></tr>
+  <tr><td>基准指数</td><td>沪深300、中证500</td></tr>
+</table>
+
+<h3>评估指标</h3>
+<table>
+  <tr><th>指标类别</th><th>具体指标</th><th>说明</th></tr>
+  <tr><td>排序质量</td><td>NDCG@5, NDCG@10, NDCG@20</td><td>排序学习的核心评估指标</td></tr>
+  <tr><td>排序质量</td><td>MAP (Mean Average Precision)</td><td>平均精度</td></tr>
+  <tr><td>投资绩效</td><td>年化收益率</td><td>组合的年化回报</td></tr>
+  <tr><td>投资绩效</td><td>夏普比率</td><td>风险调整后收益</td></tr>
+  <tr><td>投资绩效</td><td>最大回撤</td><td>峰值到谷底的最大跌幅</td></tr>
+  <tr><td>投资绩效</td><td>卡尔玛比率</td><td>年化收益/最大回撤</td></tr>
+  <tr><td>投资绩效</td><td>换手率</td><td>周度平均换手率</td></tr>
+  <tr><td>投资绩效</td><td>胜率</td><td>周度正收益占比</td></tr>
+  <tr><td>稳定性</td><td>月度收益标准差</td><td>收益波动性</td></tr>
+  <tr><td>稳定性</td><td>滚动夏普比率</td><td>12个月滚动窗口夏普</td></tr>
+</table>
+
+<h2>3.3 实验1：收益-夏普感知损失函数对比</h2>
+<div class="highlight-box">
+  <p><strong>目的</strong>：验证改进的损失函数是否比标准NDCG损失函数产生更好的投资绩效。</p>
+</div>
+
+<h3>实验组设计</h3>
+<table>
+  <tr><th>组别</th><th>损失函数</th><th>说明</th></tr>
+  <tr><td>Baseline-1</td><td>标准 LambdaRank (NDCG)</td><td>LightGBM默认lambdarank目标</td></tr>
+  <tr><td>Baseline-2</td><td>标准 rank:ndcg</td><td>XGBoost默认rank:ndcg目标</td></tr>
+  <tr><td>Exp-1a</td><td>收益加权NDCG</td><td>将增益函数从离散标签替换为连续收益率加权</td></tr>
+  <tr><td>Exp-1b</td><td>收益加权NDCG + 夏普惩罚</td><td>在Exp-1a基础上加入Top-K组合夏普比率惩罚项</td></tr>
+  <tr><td>Exp-1c</td><td>收益加权NDCG + 夏普惩罚 + CVaR约束</td><td>在Exp-1b基础上加入条件风险价值约束</td></tr>
+</table>
+
+<h3>损失函数数学定义</h3>
+<div class="formula">
+  <p><strong>标准NDCG损失（Baseline）：</strong></p>
+  <p>L<sub>rank</sub> = −Σ<sub>q</sub> (1/|D<sub>q</sub>|) Σ<sub>k=1</sub><sup>K</sup> (2<sup>rel<sub>k</sub></sup> − 1) / log<sub>2</sub>(k+1)</p>
+  <p>其中 rel<sub>k</sub> 为离散相关性标签（0-30整数）。</p>
+</div>
+<div class="formula">
+  <p><strong>收益加权NDCG损失（Exp-1a）：</strong></p>
+  <p>L<sub>return</sub> = −Σ<sub>q</sub> (1/Z<sub>q</sub>) Σ<sub>k=1</sub><sup>K</sup> g(r<sub>k</sub>) / log<sub>2</sub>(k+1)</p>
+  <p>其中增益函数 g(r<sub>k</sub>) = |r<sub>k</sub>|<sup>α</sup> · sign(r<sub>k</sub>) + C，r<sub>k</sub> 为第k只股票的未来一周收益率，α 为收益敏感度参数（默认1.0），C 为常数偏移确保增益非负。</p>
+</div>
+<div class="formula">
+  <p><strong>夏普惩罚项（Exp-1b）：</strong></p>
+  <p>L<sub>sharpe</sub> = L<sub>return</sub> + λ · max(0, −Ŝ<sub>TopK</sub>)</p>
+  <p>其中 Ŝ<sub>TopK</sub> 为Top-K组合的滚动夏普比率，λ 为惩罚系数（默认0.1）。</p>
+</div>
+<div class="formula">
+  <p><strong>CVaR约束（Exp-1c）：</strong></p>
+  <p>L<sub>cvar</sub> = L<sub>sharpe</sub> + γ · CVaR<sub>α</sub>(TopK)</p>
+  <p>其中 CVaR<sub>α</sub> 为Top-K组合在置信水平α（默认0.95）下的条件风险价值，γ 为风险厌恶系数（默认0.05）。</p>
+</div>
+
+<h3>需要实现的代码</h3>
+<table>
+  <tr><th>任务</th><th>文件</th><th>优先级</th></tr>
+  <tr><td>新增自定义目标函数 <code>return_aware_objective</code></td><td>model_lightgbm.py</td><td><span class="badge badge-p0">P0</span></td></tr>
+  <tr><td>新增自定义目标函数 <code>return_aware_objective</code></td><td>model_xgboost.py</td><td><span class="badge badge-p0">P0</span></td></tr>
+  <tr><td>新增超参数搜索空间（α, λ, γ）</td><td>model_lightgbm.py / model_xgboost.py</td><td><span class="badge badge-p0">P0</span></td></tr>
+</table>
+
+<h3>预期结果</h3>
+<table>
+  <tr><th>指标</th><th>Baseline</th><th>Exp-1a</th><th>Exp-1b</th><th>Exp-1c</th></tr>
+  <tr><td>NDCG@10</td><td>基准</td><td>持平或略降</td><td>持平或略降</td><td>略降</td></tr>
+  <tr><td>年化收益</td><td>基准</td><td>提升5-15%</td><td>提升10-20%</td><td>提升5-10%</td></tr>
+  <tr><td>夏普比率</td><td>基准</td><td>提升</td><td>显著提升</td><td>显著提升</td></tr>
+  <tr><td>最大回撤</td><td>基准</td><td>持平</td><td>改善</td><td>显著改善</td></tr>
+</table>
+<div class="warning-box">
+  <p><strong>关键论证逻辑</strong>：NDCG可能略降（因为优化目标不再是纯排序质量），但投资绩效（夏普、回撤）显著提升，证明损失函数改进使排序目标与投资目标对齐。</p>
+</div>
+
+<h2>3.4 实验2：多模型排序融合对比</h2>
+<div class="highlight-box">
+  <p><strong>目的</strong>：验证RRF排序融合是否比单模型更稳定，比简单平均更有效。</p>
+</div>
+
+<h3>实验组设计</h3>
+<table>
+  <tr><th>组别</th><th>方法</th><th>说明</th></tr>
+  <tr><td>Baseline-L</td><td>LightGBM LambdaRank 单模型</td><td>使用Exp-1b的最优损失函数</td></tr>
+  <tr><td>Baseline-X</td><td>XGBoost rank:ndcg 单模型</td><td>使用Exp-1b的最优损失函数</td></tr>
+  <tr><td>Exp-2a</td><td>简单平均融合</td><td>两模型预测分数归一化后取平均</td></tr>
+  <tr><td>Exp-2b</td><td>RRF融合</td><td>Reciprocal Rank Fusion，k=60</td></tr>
+  <tr><td>Exp-2c</td><td>Stacking融合</td><td>两模型预测分数为元特征，Ridge回归为元学习器</td></tr>
+  <tr><td>Exp-2d</td><td>加权RRF融合</td><td>根据验证集NDCG动态调整RRF权重</td></tr>
+</table>
+
+<h3>RRF融合公式</h3>
+<div class="formula">
+  <p>RRF(d) = Σ<sub>m∈M</sub> 1 / (k + rank<sub>m</sub>(d))</p>
+  <p>其中 M 为模型集合，rank<sub>m</sub>(d) 为股票d在模型m中的排名，k 为平滑常数（默认60）。</p>
+</div>
+
+<h3>需要实现的代码</h3>
+<table>
+  <tr><th>任务</th><th>文件</th><th>优先级</th></tr>
+  <tr><td>新增 RRF、Stacking、加权RRF 三种融合方法</td><td>新建 src/model_fusion.py</td><td><span class="badge badge-p0">P0</span></td></tr>
+  <tr><td>回测引擎支持融合模型预测接口</td><td>backtest.py</td><td><span class="badge badge-p0">P0</span></td></tr>
+  <tr><td>融合模型评估和可视化</td><td>新建 src/result_visualizer.py</td><td><span class="badge badge-p1">P1</span></td></tr>
+</table>
+
+<h2>3.5 实验3：LLM可解释推荐效果评估</h2>
+<div class="highlight-box">
+  <p><strong>目的</strong>：验证LLM结构化推荐是否比纯模型输出更有实用价值。</p>
+</div>
+
+<h3>实验组设计</h3>
+<table>
+  <tr><th>组别</th><th>推荐方式</th><th>说明</th></tr>
+  <tr><td>Baseline</td><td>纯模型输出</td><td>仅输出Top-K股票代码和得分</td></tr>
+  <tr><td>Exp-3a</td><td>模型 + 特征重要性</td><td>输出Top-K股票 + 各股票的关键驱动因子</td></tr>
+  <tr><td>Exp-3b</td><td>模型 + 特征贡献分解</td><td>输出Top-K股票 + 逐股票的SHAP近似贡献</td></tr>
+  <tr><td>Exp-3c</td><td>模型 + 特征贡献 + LLM结构化推荐</td><td>完整链路：排序→解释→AI建议</td></tr>
+</table>
+
+<h3>评估方法</h3>
+<ol>
+  <li><strong>定量评估</strong>：LLM推荐后的模拟执行收益 vs 纯模型推荐的模拟执行收益</li>
+  <li><strong>定性评估</strong>：邀请3-5名有投资经验的评估者，对推荐的合理性打分（1-5分）</li>
+  <li><strong>一致性评估</strong>：LLM推荐操作与模型排序信号的一致率</li>
+</ol>
+
+<h2>3.6 实验4：多维度排序框架综合对比</h2>
+<div class="highlight-box">
+  <p><strong>目的</strong>：系统对比4种排序学习方法在A股市场的表现，分析不同市场环境下的适配性。</p>
+</div>
+
+<h3>市场环境划分</h3>
+<table>
+  <tr><th>市场环境</th><th>时间段</th><th>划分依据</th></tr>
+  <tr><td>牛市</td><td>2019-01 至 2020-01, 2024-09 至 2024-12</td><td>沪深300涨幅>20%</td></tr>
+  <tr><td>熊市</td><td>2022-01 至 2022-10</td><td>沪深300跌幅>20%</td></tr>
+  <tr><td>震荡市</td><td>2021-01 至 2021-12, 2023-01 至 2023-12</td><td>沪深300涨跌幅<10%</td></tr>
+</table>
+
+<h2>3.7 实验结果呈现方式</h2>
+<h3>必须包含的图表</h3>
+<table>
+  <tr><th>编号</th><th>类型</th><th>内容</th><th>对应实验</th></tr>
+  <tr><td>Fig.1</td><td>流程图</td><td>论文整体方法框架图</td><td>全局</td></tr>
+  <tr><td>Fig.2</td><td>折线图</td><td>各方法的累计净值曲线对比</td><td>Exp-4</td></tr>
+  <tr><td>Fig.3</td><td>柱状图</td><td>各方法NDCG@K对比</td><td>Exp-1, Exp-4</td></tr>
+  <tr><td>Fig.4</td><td>折线图</td><td>截面NDCG@10时间序列（展示稳定性）</td><td>Exp-2</td></tr>
+  <tr><td>Fig.5</td><td>热力图</td><td>月度收益热力图</td><td>Exp-4</td></tr>
+  <tr><td>Fig.6</td><td>柱状图</td><td>特征重要性对比（LightGBM vs XGBoost）</td><td>Exp-2</td></tr>
+  <tr><td>Fig.7</td><td>案例展示</td><td>LLM推荐输出示例</td><td>Exp-3</td></tr>
+  <tr><td>Fig.8</td><td>雷达图</td><td>各方法多维度综合对比</td><td>Exp-4</td></tr>
+</table>
+
+<!-- ==================== 第四部分 ==================== -->
+<div class="page-break"></div>
+<h1>第四部分：论文写作流程</h1>
+
+<h2>4.1 时间线（8-10周详细计划）</h2>
+
+<div class="timeline">
+  <div class="timeline-item active">
+    <div class="timeline-week">第1周：文献调研</div>
+    <ul class="checklist">
+      <li>阅读第一阶段必读论文（B1-B5）</li>
+      <li>建立文献笔记（使用阅读笔记模板）</li>
+      <li>确定论文投稿目标会议</li>
+      <li>查看目标会议的投稿要求（页数、格式、截止日期）</li>
+    </ul>
+  </div>
+  <div class="timeline-item">
+    <div class="timeline-week">第2周：文献精读 + 实验设计</div>
+    <ul class="checklist">
+      <li>阅读第二阶段论文中与创新点①相关的（C1-C4）</li>
+      <li>细化实验设计，确定超参数搜索空间</li>
+      <li>编写实验代码框架</li>
+      <li>与合作者讨论实验方案，达成一致</li>
+    </ul>
+  </div>
+  <div class="timeline-item">
+    <div class="timeline-week">第3周：实验1实现</div>
+    <ul class="checklist">
+      <li>实现收益加权NDCG损失函数</li>
+      <li>实现夏普惩罚项</li>
+      <li>实现CVaR约束</li>
+      <li>跑Exp-1全部实验组，记录结果</li>
+    </ul>
+  </div>
+  <div class="timeline-item">
+    <div class="timeline-week">第4周：实验2实现</div>
+    <ul class="checklist">
+      <li>实现RRF融合</li>
+      <li>实现Stacking融合</li>
+      <li>实现加权RRF融合</li>
+      <li>跑Exp-2全部实验组，记录结果</li>
+    </ul>
+  </div>
+  <div class="timeline-item">
+    <div class="timeline-week">第5周：实验3+4实现</div>
+    <ul class="checklist">
+      <li>完善LLM推荐链路</li>
+      <li>跑Exp-3评估</li>
+      <li>跑Exp-4综合对比</li>
+      <li>整理全部实验数据</li>
+    </ul>
+  </div>
+  <div class="timeline-item">
+    <div class="timeline-week">第6周：结果整理 + 图表制作</div>
+    <ul class="checklist">
+      <li>制作所有图表（Fig.1-Fig.8）</li>
+      <li>制作所有表格（Tab.1-Tab.6）</li>
+      <li>分析实验结果，提炼关键发现</li>
+      <li>与合作者讨论结果，确认论文核心论点</li>
+    </ul>
+  </div>
+  <div class="timeline-item">
+    <div class="timeline-week">第7周：论文初稿（Introduction + Related Work + Method）</div>
+    <ul class="checklist">
+      <li>撰写引言（Introduction）</li>
+      <li>撰写相关工作（Related Work）</li>
+      <li>撰写方法部分（Methodology）</li>
+    </ul>
+  </div>
+  <div class="timeline-item">
+    <div class="timeline-week">第8周：论文初稿（Experiment + Conclusion）</div>
+    <ul class="checklist">
+      <li>撰写实验部分（Experiments）</li>
+      <li>撰写结论（Conclusion）</li>
+      <li>撰写摘要（Abstract）</li>
+      <li>完成初稿</li>
+    </ul>
+  </div>
+  <div class="timeline-item">
+    <div class="timeline-week">第9周：内部审阅 + 修改</div>
+    <ul class="checklist">
+      <li>与合作者交叉审阅</li>
+      <li>根据反馈修改</li>
+      <li>检查引用格式</li>
+      <li>语言润色</li>
+    </ul>
+  </div>
+  <div class="timeline-item">
+    <div class="timeline-week">第10周：投稿</div>
+    <ul class="checklist">
+      <li>按目标会议格式排版</li>
+      <li>最终检查</li>
+      <li>提交投稿</li>
+    </ul>
+  </div>
+</div>
+
+<h2>4.2 论文结构模板（8-10页会议论文）</h2>
+<table>
+  <tr><th>章节</th><th>内容</th><th>页数</th></tr>
+  <tr><td>标题 + 摘要 + 关键词</td><td>摘要150-250字，关键词5-8个</td><td>0.5页</td></tr>
+  <tr><td>1. 引言</td><td>研究背景、问题、贡献（3点）、论文结构</td><td>1.5页</td></tr>
+  <tr><td>2. 相关工作</td><td>2.1排序学习选股 2.2损失函数改进 2.3模型融合与LLM推荐</td><td>1.5页</td></tr>
+  <tr><td>3. 方法</td><td>3.1问题定义 3.2收益-夏普感知损失 3.3 RRF融合 3.4 LLM推荐 3.5整体流程</td><td>2.5页</td></tr>
+  <tr><td>4. 实验</td><td>4.1设置 4.2基线 4.3-4.6四组实验 4.7消融实验</td><td>3页</td></tr>
+  <tr><td>5. 结论与展望</td><td>总结贡献、局限性、未来方向</td><td>0.5页</td></tr>
+  <tr><td>参考文献</td><td>15-25篇</td><td>1页</td></tr>
+</table>
+
+<h3>各部分写作要点</h3>
+
+<h4>摘要（四句话结构）</h4>
+<ol>
+  <li><strong>背景</strong>：排序学习在量化选股中取得了显著效果，但现有方法存在排序目标与投资目标不对齐的问题。</li>
+  <li><strong>方法</strong>：本文提出收益-夏普感知排序损失函数，将金融收益目标直接嵌入排序优化；采用RRF多模型排序融合提升选股稳定性；结合LLM实现可解释投资推荐。</li>
+  <li><strong>结果</strong>：在A股市场的实验表明，所提方法相比标准LambdaRank，夏普比率提升XX%，最大回撤降低XX%。</li>
+  <li><strong>意义</strong>：本研究为排序学习选股的损失函数设计和模型融合提供了新思路。</li>
+</ol>
+
+<h4>引言（漏斗结构）</h4>
+<div class="highlight-box">
+  <p>量化投资是金融领域的重要研究方向</p>
+  <p class="flow-arrow">↓</p>
+  <p>机器学习在量化选股中广泛应用</p>
+  <p class="flow-arrow">↓</p>
+  <p>排序学习是选股的有效范式</p>
+  <p class="flow-arrow">↓</p>
+  <p>但存在三个关键问题：①排序损失与投资收益不对齐 ②单模型排序不稳定 ③模型推荐缺乏可解释性</p>
+  <p class="flow-arrow">↓</p>
+  <p>本文提出三个对应解决方案（三个贡献点）</p>
+</div>
+
+<h4>相关工作写作技巧</h4>
+<div class="warning-box">
+  <p><strong>关键技巧</strong>：每个相关工作末尾，用一句话指出其局限性，自然引出你的工作。</p>
+  <p>示例："Song et al. [B5] 首次将LTR引入选股，但使用标准NDCG损失函数，<strong>未考虑排序目标与投资收益的对齐问题</strong>。"</p>
+</div>
+
+<h2>4.3 写作工具与规范</h2>
+<table>
+  <tr><th>工具</th><th>用途</th><th>说明</th></tr>
+  <tr><td>LaTeX / Overleaf</td><td>论文排版</td><td>会议论文标准工具，Overleaf支持在线协作</td></tr>
+  <tr><td>Zotero / Mendeley</td><td>文献管理</td><td>管理理论文引用，自动生成BibTeX</td></tr>
+  <tr><td>draw.io / Excalidraw</td><td>画流程图</td><td>画方法框架图</td></tr>
+  <tr><td>matplotlib / Plotly</td><td>画实验图表</td><td>Python生成实验图表</td></tr>
+  <tr><td>Grammarly / DeepL</td><td>语言润色</td><td>英文语法检查和润色</td></tr>
+</table>
+
+<!-- ==================== 第五部分 ==================== -->
+<div class="page-break"></div>
+<h1>第五部分：需要准备的东西</h1>
+
+<h2>5.1 投稿前准备清单</h2>
+
+<h3>会议选择</h3>
+<table>
+  <tr><th>会议名称</th><th>级别</th><th>投稿截止（参考）</th><th>适合度</th></tr>
+  <tr><td><strong>ICAIF</strong> (ACM Intl Conf on AI in Finance)</td><td>CCF-B</td><td>每年6-8月</td><td><span class="badge badge-star5">★★★★★</span> 最对口</td></tr>
+  <tr><td>KDD (Knowledge Discovery and Data Mining)</td><td>CCF-A</td><td>每年2月</td><td><span class="badge badge-star4">★★★★</span> 竞争激烈</td></tr>
+  <tr><td>CIKM (Conf on Information and Knowledge Management)</td><td>CCF-B</td><td>每年5月</td><td><span class="badge badge-star4">★★★★</span></td></tr>
+  <tr><td>IJCAI (Intl Joint Conf on AI)</td><td>CCF-A</td><td>每年1月</td><td><span class="badge badge-star3">★★★</span></td></tr>
+  <tr><td>AAAI (AAAI Conf on AI)</td><td>CCF-A</td><td>每年8月</td><td><span class="badge badge-star3">★★★</span></td></tr>
+</table>
+<div class="success-box">
+  <p><strong>建议首选</strong>：ICAIF（最对口的AI+金融会议）或 CIKM（信息检索+知识管理，与排序学习相关）</p>
+</div>
+
+<h3>需要新开发的代码模块</h3>
+<table>
+  <tr><th>模块</th><th>功能</th><th>预计代码量</th><th>优先级</th></tr>
+  <tr><td>return_aware_loss.py</td><td>收益-夏普感知损失函数</td><td>约200行</td><td><span class="badge badge-p0">P0</span></td></tr>
+  <tr><td>model_fusion.py</td><td>RRF/Stacking/加权RRF融合</td><td>约300行</td><td><span class="badge badge-p0">P0</span></td></tr>
+  <tr><td>experiment_runner.py</td><td>实验自动化运行脚本</td><td>约400行</td><td><span class="badge badge-p1">P1</span></td></tr>
+  <tr><td>result_visualizer.py</td><td>实验结果可视化</td><td>约500行</td><td><span class="badge badge-p1">P1</span></td></tr>
+  <tr><td>prompt_enhanced.py</td><td>增强版提示词（含特征贡献）</td><td>约150行</td><td><span class="badge badge-p2">P2</span></td></tr>
+  <tr><td>evaluation_report.py</td><td>自动生成评估报告</td><td>约300行</td><td><span class="badge badge-p2">P2</span></td></tr>
+</table>
+
+<h2>5.2 合作者分工建议</h2>
+<table>
+  <tr><th>角色</th><th>负责人</th><th>主要任务</th></tr>
+  <tr><td>实验负责人</td><td>（填写）</td><td>代码实现、跑实验、整理数据</td></tr>
+  <tr><td>写作负责人</td><td>（填写）</td><td>论文撰写、文献整理、图表制作</td></tr>
+  <tr><td>共同负责</td><td>双方</td><td>实验设计讨论、结果分析、论文修改</td></tr>
+</table>
+
+<h2>5.3 论文写作常见陷阱（新手必看！）</h2>
+
+<div class="warning-box">
+  <h4>陷阱1：先写代码后想故事</h4>
+  <p><strong>❌ 错误</strong>：先把所有实验跑完，再想怎么写论文。</p>
+  <p><strong>✅ 正确</strong>：先确定论文的核心论点（故事线），再设计实验来验证论点。实验是为论点服务的。</p>
+</div>
+
+<div class="warning-box">
+  <h4>陷阱2：堆砌实验结果，缺乏分析</h4>
+  <p><strong>❌ 错误</strong>：放一堆表格，让读者自己看。</p>
+  <p><strong>✅ 正确</strong>：每个实验结果后必须有2-3段分析，回答：结果说明了什么？为什么？与预期是否一致？</p>
+</div>
+
+<div class="warning-box">
+  <h4>陷阱3：相关工作写成"流水账"</h4>
+  <p><strong>❌ 错误</strong>：A做了什么，B做了什么，C做了什么……没有逻辑串联。</p>
+  <p><strong>✅ 正确</strong>：按问题组织相关工作，每个小节末尾指出已有工作的局限性，自然引出你的贡献。</p>
+</div>
+
+<div class="warning-box">
+  <h4>陷阱4：过度承诺创新性</h4>
+  <p><strong>❌ 错误</strong>："本文首次提出……""开创性地……"</p>
+  <p><strong>✅ 正确</strong>：用客观表述，如"本文将XX方法引入XX场景""在XX基础上改进了XX"。</p>
+</div>
+
+<div class="warning-box">
+  <h4>陷阱5：忽略消融实验</h4>
+  <p><strong>❌ 错误</strong>：只展示最终方法的整体效果。</p>
+  <p><strong>✅ 正确</strong>：逐步移除每个创新组件，展示移除后效果下降，证明每个组件都有贡献。</p>
+</div>
+
+<div class="warning-box">
+  <h4>陷阱6：图表不清晰</h4>
+  <p><strong>❌ 错误</strong>：截图粘贴、分辨率低、字体太小。</p>
+  <p><strong>✅ 正确</strong>：使用矢量图（PDF/EPS），字体≥8pt，色盲友好配色，每张图都能独立理解。</p>
+</div>
+
+<!-- ==================== 第六部分 ==================== -->
+<div class="page-break"></div>
+<h1>第六部分：论文投稿流程</h1>
+
+<h2>6.1 投稿前检查清单</h2>
+<ul class="checklist">
+  <li>论文符合目标会议的页数限制（通常8-10页正文+参考文献）</li>
+  <li>论文使用目标会议的LaTeX模板</li>
+  <li>所有引用格式正确，无遗漏</li>
+  <li>所有图表清晰，有标题和编号</li>
+  <li>所有表格有标题和编号</li>
+  <li>摘要在150-250字以内</li>
+  <li>关键词5-8个</li>
+  <li>无语法错误（使用Grammarly检查）</li>
+  <li>无拼写错误</li>
+  <li>作者信息完整</li>
+  <li>声明无利益冲突</li>
+  <li>补充材料准备完毕（如代码、数据说明）</li>
+</ul>
+
+<h2>6.2 审稿流程</h2>
+<div class="highlight-box">
+  <p>投稿 → 编辑分配 → 审稿人评审（通常2-3位）→ 审稿意见返回 → 修改 → 录用/拒稿</p>
+</div>
+
+<h3>审稿人关注点</h3>
+<table>
+  <tr><th>关注点</th><th>权重</th><th>你的应对</th></tr>
+  <tr><td>创新性</td><td>30%</td><td>三个创新点明确，与现有工作区分清晰</td></tr>
+  <tr><td>实验充分性</td><td>25%</td><td>4组实验+消融实验，多维度评估</td></tr>
+  <tr><td>写作质量</td><td>20%</td><td>逻辑清晰，图表专业，语言流畅</td></tr>
+  <tr><td>技术正确性</td><td>15%</td><td>公式推导正确，无前视偏差</td></tr>
+  <tr><td>实际意义</td><td>10%</td><td>在A股市场有实际应用价值</td></tr>
+</table>
+
+<h2>6.3 常见审稿意见及预防</h2>
+<table>
+  <tr><th>审稿意见</th><th>预防措施</th></tr>
+  <tr><td>"创新性不足"</td><td>在引言中明确指出已有工作的局限性和你的改进</td></tr>
+  <tr><td>"实验不够充分"</td><td>4组实验+消融实验+多市场环境分析</td></tr>
+  <tr><td>"缺少与XX方法的对比"</td><td>在Related Work中讨论，实验中加入更多基线</td></tr>
+  <tr><td>"前视偏差未排除"</td><td>严格时序切分，因子shift(1)，Purged CV</td></tr>
+  <tr><td>"结果提升不显著"</td><td>强调夏普比率和回撤改善，而非仅看NDCG</td></tr>
+  <tr><td>"LLM部分缺乏定量评估"</td><td>设计模拟执行收益对比实验</td></tr>
+</table>
+
+<!-- ==================== 第七部分 ==================== -->
+<div class="page-break"></div>
+<h1>第七部分：关键公式汇总</h1>
+
+<h2>7.1 收益-夏普感知排序损失函数</h2>
+
+<div class="formula">
+  <p><strong>标准NDCG损失：</strong></p>
+  <p>DCG@K = Σ<sub>k=1</sub><sup>K</sup> (2<sup>rel<sub>k</sub></sup> − 1) / log<sub>2</sub>(k+1)</p>
+  <p>NDCG@K = DCG@K / IDCG@K</p>
+  <p>L<sub>rank</sub> = −NDCG@K</p>
+</div>
+
+<div class="formula">
+  <p><strong>收益加权增益函数：</strong></p>
+  <p>g(r<sub>k</sub>) = |r<sub>k</sub>|<sup>α</sup> · sign(r<sub>k</sub>) + C</p>
+  <p>其中 r<sub>k</sub> 为第k只股票的未来收益率，α ≥ 1 为收益敏感度参数，C 为常数偏移确保增益非负。</p>
+</div>
+
+<div class="formula">
+  <p><strong>完整损失函数：</strong></p>
+  <p>L = −Σ<sub>q∈Q</sub> [ (1/Z<sub>q</sub>) Σ<sub>k=1</sub><sup>K</sup> g(r<sub>k</sub><sup>q</sup>) / log<sub>2</sub>(k+1) ] + λ · max(0, −Ŝ<sub>q</sub>) + γ · CVaR<sub>α</sub>(Π<sub>q</sub>)</p>
+  <p>其中：Q为截面集合，Z<sub>q</sub>为归一化常数，Ŝ<sub>q</sub>为截面q的Top-K组合滚动夏普比率，Π<sub>q</sub>为截面q的Top-K组合收益率分布，λ为夏普惩罚系数，γ为CVaR风险厌恶系数。</p>
+</div>
+
+<h2>7.2 RRF排序融合</h2>
+<div class="formula">
+  <p>RRF(d) = Σ<sub>m∈M</sub> w<sub>m</sub> / (k + rank<sub>m</sub>(d))</p>
+  <p>加权RRF：w<sub>m</sub> = NDCG<sub>m</sub><sup>val</sup> / Σ<sub>m'∈M</sub> NDCG<sub>m'</sub><sup>val</sup></p>
+</div>
+
+<h2>7.3 评估指标</h2>
+<div class="formula">
+  <p><strong>夏普比率：</strong>Sharpe = E[R − R<sub>f</sub>] / σ(R − R<sub>f</sub>) × √252</p>
+  <p><strong>最大回撤：</strong>MDD = max<sub>t</sub> (Peak<sub>t</sub> − Valley<sub>t</sub>) / Peak<sub>t</sub></p>
+  <p><strong>卡尔玛比率：</strong>Calmar = 年化收益率 / 最大回撤</p>
+</div>
+
+<!-- ==================== 附录 ==================== -->
+<div class="page-break"></div>
+<h1>附录A：论文阅读记录表</h1>
+
+<table>
+  <tr><th>序号</th><th>论文标题</th><th>已读</th><th>核心观点</th><th>与本文关联</th></tr>
+  <tr><td>B1</td><td>From RankNet to LambdaRank to LambdaMART</td><td>☐</td><td></td><td></td></tr>
+  <tr><td>B2</td><td>LightGBM</td><td>☐</td><td></td><td></td></tr>
+  <tr><td>B3</td><td>XGBoost</td><td>☐</td><td></td><td></td></tr>
+  <tr><td>B4</td><td>Empirical Asset Pricing via ML</td><td>☐</td><td></td><td></td></tr>
+  <tr><td>B5</td><td>LTR for Stock Portfolio Optimization</td><td>☐</td><td></td><td></td></tr>
+  <tr><td>C1</td><td>Stock Selection via LTR</td><td>☐</td><td></td><td></td></tr>
+  <tr><td>C2</td><td>LambdaMART for Chinese A-Share</td><td>☐</td><td></td><td></td></tr>
+  <tr><td>C3</td><td>Deep Learning for Cross-Sectional</td><td>☐</td><td></td><td></td></tr>
+  <tr><td>C4</td><td>基于排序学习的选股增强策略</td><td>☐</td><td></td><td></td></tr>
+  <tr><td>C5</td><td>Reciprocal Rank Fusion</td><td>☐</td><td></td><td></td></tr>
+  <tr><td>C6</td><td>FinGPT</td><td>☐</td><td></td><td></td></tr>
+  <tr><td>C7</td><td>LLMs Explain Financial Markets</td><td>☐</td><td></td><td></td></tr>
+  <tr><td>C8</td><td>XAI in Finance Survey</td><td>☐</td><td></td><td></td></tr>
+  <tr><td>C9</td><td>Advances in Financial ML</td><td>☐</td><td></td><td></td></tr>
+  <tr><td>C10</td><td>Cross-Section of Expected Returns</td><td>☐</td><td></td><td></td></tr>
+  <tr><td>C11</td><td>StockRanker</td><td>☐</td><td></td><td></td></tr>
+</table>
+
+<h1>附录B：实验结果记录表</h1>
+
+<h3>实验1：损失函数对比</h3>
+<table>
+  <tr><th>方法</th><th>NDCG@5</th><th>NDCG@10</th><th>NDCG@20</th><th>MAP</th><th>年化收益</th><th>夏普比率</th><th>最大回撤</th><th>换手率</th></tr>
+  <tr><td>Baseline-L</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td>Baseline-X</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td>Exp-1a</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td>Exp-1b</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td>Exp-1c</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+</table>
+
+<h3>实验2：融合方法对比</h3>
+<table>
+  <tr><th>方法</th><th>NDCG@5</th><th>NDCG@10</th><th>NDCG@20</th><th>MAP</th><th>年化收益</th><th>夏普比率</th><th>最大回撤</th><th>换手率</th></tr>
+  <tr><td>Baseline-L</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td>Baseline-X</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td>Exp-2a (平均)</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td>Exp-2b (RRF)</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td>Exp-2c (Stacking)</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td>Exp-2d (加权RRF)</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+</table>
+
+<h3>实验4：市场环境分析</h3>
+<table>
+  <tr><th>方法</th><th>牛市年化</th><th>牛市夏普</th><th>熊市年化</th><th>熊市夏普</th><th>震荡年化</th><th>震荡夏普</th></tr>
+  <tr><td>Method-1</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td>Method-2</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td>Method-3</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td>Method-4</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+</table>
+
+<h1>附录C：重要提醒</h1>
+<div class="warning-box">
+  <ol>
+    <li><strong>所有实验必须可复现</strong>：记录随机种子、超参数、数据版本</li>
+    <li><strong>严格避免前视偏差</strong>：因子计算使用shift(1)，训练/验证/测试按时间切分</li>
+    <li><strong>先跑基线再跑改进</strong>：确保基线结果合理后再跑改进实验</li>
+    <li><strong>保存所有中间结果</strong>：每次实验的模型文件、预测结果、回测结果都保存</li>
+    <li><strong>与合作者保持同步</strong>：每周至少一次进度同步会议</li>
+    <li><strong>不要等到完美再写</strong>：边做实验边写论文，方法部分可以先写</li>
+    <li><strong>引用要准确</strong>：所有引用的论文必须亲自读过，不要二手引用</li>
+  </ol>
+</div>
+
+<div class="footer">
+  <p>基于收益感知排序学习与多模型融合的量化选股策略研究 — 论文写作全流程指南</p>
+  <p>生成日期：2026年5月7日</p>
+</div>
+
+</body>
+</html>

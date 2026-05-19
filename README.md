@@ -1,81 +1,91 @@
+# 基于排序学习的量化投资选股策略设计与应用
 
-# Quant Project - 基于机器学习的量化投资选股策略设计及应用和基于boosting类算法的量化投资选股策略设计及应用
+## 项目结构
 
-## 📋 项目简介
-本项目旨在构建一个基于机器学习的量化投资选股策略设计及应用和基于boosting类算法的量化投资选股策略设计及应用
-## 🗂️ 项目结构（具体文件还没有创建完，但是大框架是这样，各个方向负责人依据自己方向需要后续自行更新吧）
-quant_project/
-- ├── data/ # 数据获取与清洗组
-- │ ├── raw_data/ # 原始数据存储
-- │ ├── cleaned_data/ # 清洗后数据存储
-- │ ├── data_fetcher.py # 数据获取脚本
-- │ └── data_cleaner.py # 数据清洗脚本
-- ├── strategy/ # 策略与框架组
-- │ ├── model_trainer.py # 模型训练脚本
-- │ └── signal_generator.py # 信号生成脚本
-- ├── backtest/ # 回测组
-- │ └── backtest_engine.py # 回测引擎脚本
-- ├── utils/ # 公共工具函数
-- ├── config.py # 项目配置文件
-- ├── main.py # 主程序入口
-- └── requirements.txt # 项目依赖库
+- `backend/`：FastAPI 后端、数据处理与模型服务
+- `frontend/`：React + TypeScript + Vite 前端网站
 
-## 👥 团队分工
-- **数据获取与清洗组**：负责股票数据获取、清洗和预处理
-- **策略与框架组**：负责特征工程、模型训练和交易信号生成
-- **回测组**：负责策略回测和绩效评估
-- **系统集成组**：负责项目整合和流程串联（之前忘记分了，这个方向由组长负责）
+## 快速开始
 
+### 一键启动（推荐）
 
-## 📦 数据接口规范
-### 接口1：数据组 → 策略组
-- 文件位置：data/cleaned_data/cleaned_data.csv
-- 文件格式：CSV
-#### 必须包含的列：
-- date (日期，格式：YYYY-MM-DD)
-- stock_code (股票代码)
-- open (开盘价)
-- close (收盘价)
-- high (最高价)
-- low (最低价)
-- volume (成交量)
-### 接口2：策略组 → 回测组
-- 文件位置：strategy/signals/signal.csv
-- 文件格式：CSV
-#### 必须包含的列：
-- date (日期)
-- stock_code (股票代码)
-- signal (信号：1=买入, 0=持有, -1=卖出)
-- confidence (置信度，范围0.0-1.0)
+- **Windows**：在项目根目录双击或执行 `start.bat`，会分别打开两个终端窗口启动后端与前端。
+- **Linux / macOS**：在项目根目录执行：
+  - `chmod +x start.sh`
+  - `./start.sh`
 
+启动成功后：
 
+- 后端 API：`http://127.0.0.1:8000`（健康检查：`GET /health`）
+- 前端页面：`http://127.0.0.1:5173`（页面会请求 `GET /api/v1/test` 验证联调）
 
-## PS：
-- 理论知识是学不完的，要完成一个项目最好的方法是立刻开始，虽然我们的代码能力可能无法一开始就写好项目，但是我们可以边学边写边迭代，一点点的进步就好。现在先搭建一个简陋的木屋，但是我们相信到项目结束，这个简陋的木屋会变成一栋别墅。
-- 大家可能一开始的代码基本上都是AI帮忙（我也是），但是建议不要只用AI完成任务就万事大吉，如果有时间，可以让AI告诉我们它生成的代码的每一段语句都是什么意思、有什么用处、为什么要这么使用、还可以怎么修改等等问题。然后在空闲时自己尝试不用AI去重新写一次，个人感觉这样学东西比较快。
-- 如果有什么不明白的地方和关于项目的建议可以多多在群里面交流。
-- 关于策略的制定，策略组的同学要多关注股市的主流战法，先用别人的，等自己理解了原理再开始构思自己的策略。
-- 回测组的同学也要多与策略组同学交流，要多分析回测结果，指出不同策略的效果好坏，依次改进。
-- 代码写完后记得写注释，实在懒得写可以用AI，不然不方便自己和他人阅读。这真的很重要，很重要，很重要！！！
-- 如果代码里引用了配置文件里没有的库，记得在配置文件里添加，不然其他同学可能无法发现代码运行不了的原因。
+### 分别启动（开发联调）
 
+#### 后端
 
-## 如何开始编写代码
-- 克隆项目（用命令行窗口克隆）
-- 点击quant_project这个文件夹，
-- 在里面查早自己方向对应的文件夹，
-- 在文件夹里根据自己方向具体需求来编写代码，
-- 编写完后上传，
-- 然后我这边同意后就可以更新了。
+1. 进入目录：`cd backend`
+2. 激活虚拟环境（PowerShell）：`.\venv\Scripts\Activate.ps1`
+3. 启动服务：`python -m uvicorn src.main:app --reload`  
+   （也可使用 `uvicorn main:app --reload`，`main.py` 会转发到 `src.main:app`）
 
-## 🚀快速开始
+#### 前端
 
+1. 进入目录：`cd frontend`
+2. 安装依赖：`npm install`
+3. 启动开发环境：`npm run dev`
 
-### 环境配置
+### 联调说明
+
+- 前端 Axios 默认 `baseURL` 为 `http://localhost:8000/api/v1`（见 `frontend/src/services/api.ts`）。
+- 后端已配置 CORS，允许 `http://localhost:5173` 与 `http://127.0.0.1:5173`。
+- 若希望走 Vite 代理避免浏览器跨域，可在 `frontend` 下创建 `.env` 并设置：
+  - `VITE_API_BASE_URL=/api/v1`  
+  开发服务器会将 `/api` 代理到 `http://127.0.0.1:8000`（见 `frontend/vite.config.ts`）。
+
+### 模型预测 API（排序得分 / AI 推荐上下文）
+
+后端启动后（`python -m uvicorn src.main:app --reload`，工作目录为 `backend` 且已配置 `PYTHONPATH`），基址为 `http://127.0.0.1:8000`。
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `POST` | `/api/v1/predict` | 可选请求体：`stock_codes`（限定股票）、`date`（截面日期 YYYY-MM-DD）、`top_n`（默认 20）。返回 `code`、`data.top_stocks`（`code`+`score`）、`data.feature_importance`、`data.timestamp`。 |
+| `GET` | `/api/v1/model/info` | 返回当前默认模型类型、`trained_at`（模型文件更新时间）、`feature_importance` 与按重要性排序的 `feature_importance_list`。 |
+
+- **默认模型**：环境变量或 `.env` 中 `DEFAULT_PREDICT_MODEL`（`lightgbm` / `xgboost`），缺省为 `lightgbm`。模型与因子路径见 `backend/src/config.py`（`LIGHTGBM_MODEL_PATH`、`XGBOOST_MODEL_PATH`、`QUANT_DATA_DIR` 等）。
+- **单例加载**：`ModelPredictor` 通过 `src.api.v1.deps.get_predictor` 缓存，进程内只加载一次。
+- **Python 侧 AI 上下文**：`ModelPredictor.get_advice_context(top_n=10)` 返回字典，包含 Top 股票 `code`/`score`、全局 `feature_importance`、`section_date`、`model_type`（见 `backend/src/predictor.py`）。
+
+示例：
+
 ```bash
-# 克隆项目
-git clone https://github.com/你的用户名/quant_project.git
-cd quant_project
+curl -s -X POST http://127.0.0.1:8000/api/v1/predict -H "Content-Type: application/json" -d "{\"top_n\": 10}"
+curl -s http://127.0.0.1:8000/api/v1/model/info
+```
 
-# 安装依赖
-pip install -r requirements.txt
+**单元测试**（需安装 `pytest`）：
+
+```bash
+cd backend
+set PYTHONPATH=.
+python -m pytest tests/test_predict_api.py -v
+```
+
+### 批量下载日线数据（阶段2）
+
+在 `backend` 目录下执行（需已配置虚拟环境并安装依赖）：
+
+```bash
+# Windows PowerShell
+$env:PYTHONPATH="."
+python -m src.data_fetcher --download --start-date 2014-01-01 --end-date 2024-12-31
+```
+
+- 首次会构建「存活股票池」并缓存到 `backend/data/meta/surviving_stocks_*.parquet`（约 3000 只量级，需逐只拉取东财资料，耗时较长）。
+- 日线写入 `backend/data/raw/{股票代码}.parquet`；失败代码写入 `backend/data/meta/download_failed_codes.txt`，详细日志见 `backend/logs/data_download.log`。
+- 强制重建股票池时加参数：`--refresh-pool`。
+
+## 工程化说明
+
+- 后端依赖锁定在 `backend/requirements.txt`
+- 前端使用 ESLint + Prettier，配置文件为 `frontend/.eslintrc.cjs` 与 `frontend/.prettierrc`
+- 前端源码按模块放置在 `frontend/src/components`、`frontend/src/pages`、`frontend/src/hooks`、`frontend/src/types`、`frontend/src/services`、`frontend/src/utils`、`frontend/src/styles`

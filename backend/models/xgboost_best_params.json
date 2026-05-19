@@ -1,0 +1,17 @@
+{
+  "objective": "rank:ndcg",
+  "eval_metric": [
+    "ndcg@5",
+    "ndcg@20",
+    "ndcg@10"
+  ],
+  "booster": "gbtree",
+  "eta": 0.017987863473362915,
+  "max_depth": 3,
+  "subsample": 0.522613644455269,
+  "colsample_bytree": 0.6626651653816322,
+  "min_child_weight": 10.830159345342231,
+  "alpha": 0.5426980635477918,
+  "lambda": 4.229318791183682,
+  "seed": 42
+}

@@ -1,0 +1,56 @@
+{
+  "B-LGBM": {
+    "sharpe_ratio": 0.7107694834875372,
+    "n_trials": 20,
+    "skewness": 1.2315253708910285,
+    "kurtosis": 3.1299296937780348,
+    "n_obs": 100,
+    "dsr": 0.04036271204860446,
+    "credible": false
+  },
+  "B-XGB": {
+    "sharpe_ratio": 0.6101397640013944,
+    "n_trials": 20,
+    "skewness": 2.1935072523850594,
+    "kurtosis": 8.953785659156003,
+    "n_obs": 100,
+    "dsr": 0.02522063211336138,
+    "credible": false
+  },
+  "E1a-LGBM": {
+    "sharpe_ratio": 0.5758462595637606,
+    "n_trials": 20,
+    "skewness": 1.757251245106127,
+    "kurtosis": 6.532574607382944,
+    "n_obs": 100,
+    "dsr": 0.024906481040961773,
+    "credible": false
+  },
+  "E1b-LGBM": {
+    "sharpe_ratio": 0.5661408721693649,
+    "n_trials": 20,
+    "skewness": 0.9696659772789594,
+    "kurtosis": 1.6382574606660913,
+    "n_obs": 100,
+    "dsr": 0.027760134436221207,
+    "credible": false
+  },
+  "E2a-AVG": {
+    "sharpe_ratio": 0.727285548631275,
+    "n_trials": 20,
+    "skewness": 1.2891523672398078,
+    "kurtosis": 4.570313110569841,
+    "n_obs": 100,
+    "dsr": 0.04209501640346533,
+    "credible": false
+  },
+  "E2b-RRF": {
+    "sharpe_ratio": 0.28661771881690973,
+    "n_trials": 20,
+    "skewness": 2.0960907830598052,
+    "kurtosis": 8.826654963981015,
+    "n_obs": 100,
+    "dsr": 0.010110723040232087,
+    "credible": false
+  }
+}

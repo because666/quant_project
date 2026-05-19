@@ -1,0 +1,33 @@
+{
+  "generated_at": "2026-05-19T20:25:00.052443",
+  "methods": {
+    "M1-B-LGBM": {
+      "annualized_return": 0.1654700060946972,
+      "sharpe_ratio": 0.7107694834875372,
+      "max_drawdown": 0.16369581689019108,
+      "turnover_rate": 1.0295217273112718,
+      "win_rate": 0.48484848484848486
+    },
+    "M2-B-XGB": {
+      "annualized_return": 0.13699399026042136,
+      "sharpe_ratio": 0.6101397640013944,
+      "max_drawdown": 0.12185907535874974,
+      "turnover_rate": 0.6802150667807184,
+      "win_rate": 0.5151515151515151
+    },
+    "M3-E1b-RRF": {
+      "annualized_return": 0.07425805856806456,
+      "sharpe_ratio": 0.27584077648733846,
+      "max_drawdown": 0.14781804775730034,
+      "turnover_rate": 0.6086749463009656,
+      "win_rate": 0.5050505050505051
+    },
+    "M4-E1a-AVG": {
+      "annualized_return": 0.1515189916241635,
+      "sharpe_ratio": 0.6745469822065862,
+      "max_drawdown": 0.14723229468117627,
+      "turnover_rate": 0.8128667070371024,
+      "win_rate": 0.46464646464646464
+    }
+  }
+}

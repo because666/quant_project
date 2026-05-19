@@ -1,0 +1,51 @@
+{
+  "label_fn_name": "e1c",
+  "val_ndcg": {
+    "ndcg@5": 0.16381662281687254,
+    "ndcg@10": 0.15515660508682425,
+    "ndcg@20": 0.1415199333407128
+  },
+  "train_ndcg": {
+    "ndcg@5": 0.23938754714705462,
+    "ndcg@10": 0.20308395460773818,
+    "ndcg@20": 0.17554751961088363
+  },
+  "best_iteration": 32,
+  "feature_count": 34,
+  "features": [
+    "mom_1m",
+    "mom_12m",
+    "mom_accel_1m",
+    "mom_reversal",
+    "mom_short_long",
+    "mom_1w",
+    "volatility_4w",
+    "volatility_8w",
+    "volatility_12w",
+    "volatility_24w",
+    "downside_vol_8w",
+    "vol_ratio_4_12",
+    "vol_change_4w",
+    "realized_var_8w",
+    "avg_volume_4w",
+    "avg_volume_8w",
+    "avg_volume_12w",
+    "volume_change_1w",
+    "avg_amount_4w",
+    "kdj_j",
+    "boll_width",
+    "ma_ratio_4w",
+    "ma_ratio_8w",
+    "ma_slope_24w",
+    "max_retreat_4w",
+    "max_retreat_8w",
+    "skewness_8w",
+    "kurtosis_12w",
+    "ret_quantile_25_8w",
+    "obv_change_4w",
+    "vol_price_corr_8w",
+    "up_ratio_4w",
+    "up_ratio_12w",
+    "vol_up_down_ratio"
+  ]
+}

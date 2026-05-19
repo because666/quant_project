@@ -1,0 +1,51 @@
+{
+  "generated_at": "2026-05-19T18:27:22.913201",
+  "bull_section": {
+    "date": "2024-09-20",
+    "avg_return": 0.1388528048992157,
+    "e3c_success": true,
+    "e3c_is_template": false,
+    "consistency": {
+      "llm_suggestion_count": 10,
+      "model_top_k_count": 10,
+      "matched_count": 10,
+      "matched_codes": [
+        "000062",
+        "000536",
+        "002309",
+        "002488",
+        "002596",
+        "300125",
+        "300134",
+        "600650",
+        "600686",
+        "600696"
+      ],
+      "consistency_rate": 1.0
+    }
+  },
+  "bear_section": {
+    "date": "2024-01-26",
+    "avg_return": -0.14163434505462646,
+    "e3c_success": true,
+    "e3c_is_template": false,
+    "consistency": {
+      "llm_suggestion_count": 10,
+      "model_top_k_count": 10,
+      "matched_count": 10,
+      "matched_codes": [
+        "000017",
+        "000564",
+        "000571",
+        "002584",
+        "300135",
+        "300258",
+        "600156",
+        "600178",
+        "600593",
+        "600828"
+      ],
+      "consistency_rate": 1.0
+    }
+  }
+}

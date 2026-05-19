@@ -1,0 +1,9 @@
+# 使用Dockerfile构建，此文件暂不使用
+[phases.setup]
+nixPkgs = ["python311"]
+
+[phases.build]
+cmds = ["echo 'Using Dockerfile build'"]
+
+[start]
+cmd = "python start.py"

@@ -1,0 +1,23 @@
+{
+  "annualized_return": 0.16322304120361997,
+  "sharpe_ratio": 0.727285548631275,
+  "max_drawdown": 0.15303905641584137,
+  "drawdown_peak_date": "2024-05-16",
+  "drawdown_trough_date": "2024-09-13",
+  "calmar_ratio": 1.0665450050875016,
+  "sortino_ratio": 1.268575952893423,
+  "turnover_rate": 0.8361723750383024,
+  "win_rate": 0.5757575757575758,
+  "ndcg_at_10": null,
+  "avg_holding_weeks": 2.3992805755395685,
+  "sharpe_ci": {
+    "point": -0.1577886602020069,
+    "lower": -0.5457670297580705,
+    "upper": 0.5899283814241282
+  },
+  "annualized_return_ci": {
+    "point": -0.9841396042006427,
+    "lower": -0.9999999308505263,
+    "upper": 50123783.21704499
+  }
+}

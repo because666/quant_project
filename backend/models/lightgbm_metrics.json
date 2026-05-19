@@ -1,0 +1,50 @@
+{
+  "val_ndcg": {
+    "ndcg@5": 0.18941625135719267,
+    "ndcg@10": 0.1628918105406865,
+    "ndcg@20": 0.14524382947991724
+  },
+  "train_ndcg": {
+    "ndcg@5": 0.3484640670874133,
+    "ndcg@10": 0.2865143007801449,
+    "ndcg@20": 0.22324805097276704
+  },
+  "best_iteration": 18,
+  "feature_count": 34,
+  "features": [
+    "mom_1m",
+    "mom_12m",
+    "mom_accel_1m",
+    "mom_reversal",
+    "mom_short_long",
+    "mom_1w",
+    "volatility_4w",
+    "volatility_8w",
+    "volatility_12w",
+    "volatility_24w",
+    "downside_vol_8w",
+    "vol_ratio_4_12",
+    "vol_change_4w",
+    "realized_var_8w",
+    "avg_volume_4w",
+    "avg_volume_8w",
+    "avg_volume_12w",
+    "volume_change_1w",
+    "avg_amount_4w",
+    "kdj_j",
+    "boll_width",
+    "ma_ratio_4w",
+    "ma_ratio_8w",
+    "ma_slope_24w",
+    "max_retreat_4w",
+    "max_retreat_8w",
+    "skewness_8w",
+    "kurtosis_12w",
+    "ret_quantile_25_8w",
+    "obv_change_4w",
+    "vol_price_corr_8w",
+    "up_ratio_4w",
+    "up_ratio_12w",
+    "vol_up_down_ratio"
+  ]
+}

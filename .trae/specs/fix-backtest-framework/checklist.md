@@ -1,0 +1,13 @@
+- [x] 停牌股票不在截面时持仓保留，市值不为零
+- [x] 停牌股票复牌后恢复正常估值和调仓逻辑
+- [x] 默认模式下（enable_limit_price=False）无涨跌停约束，所有股票可正常买卖
+- [x] 启用模式下（enable_limit_price=True）保留原有涨跌停逻辑
+- [x] 回测结果包含 benchmark_hs300 和 benchmark_zz500 两列
+- [x] 基准净值起始值为1.0，长度与回测结果一致
+- [x] 基准数据获取失败时回测不中断，基准列填充NaN并记录警告日志
+- [x] bootstrap_metric 函数返回 point/lower/upper 三值，95%置信区间包含点估计
+- [x] paired_significance_test 函数返回 t_stat/p_value/significant/method 四值
+- [x] metrics_by_year 函数按自然年返回年化收益、夏普比率、最大回撤
+- [x] quantile_portfolio_returns 函数返回各分位组收益率和多空组合收益率
+- [x] 全部单元测试通过
+- [x] 运行完整回测（LightGBM + XGBoost）无报错，净值曲线无断崖式下跌

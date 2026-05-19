@@ -1,0 +1,130 @@
+{
+  "M1-B-LGBM": {
+    "Q1": {
+      "annualized_return": 0.1431040080100617,
+      "sharpe_ratio": 0.7517539687973698,
+      "n_weeks": 126
+    },
+    "Q2": {
+      "annualized_return": 0.12446249543092333,
+      "sharpe_ratio": 0.5731651385276478,
+      "n_weeks": 126
+    },
+    "Q3": {
+      "annualized_return": 0.09877099398346174,
+      "sharpe_ratio": 0.40354784187370946,
+      "n_weeks": 126
+    },
+    "Q4": {
+      "annualized_return": 0.09679226994067283,
+      "sharpe_ratio": 0.3600541221831632,
+      "n_weeks": 126
+    },
+    "Q5": {
+      "annualized_return": 0.054057755214353895,
+      "sharpe_ratio": 0.1731166500474821,
+      "n_weeks": 126
+    },
+    "LS": {
+      "annualized_return": 0.08904625279570783,
+      "sharpe_ratio": 0.4278765428588281,
+      "n_weeks": 126
+    }
+  },
+  "M2-B-XGB": {
+    "Q1": {
+      "annualized_return": 0.15691043170065516,
+      "sharpe_ratio": 0.8354977130094996,
+      "n_weeks": 126
+    },
+    "Q2": {
+      "annualized_return": 0.12602608682290237,
+      "sharpe_ratio": 0.575208592628976,
+      "n_weeks": 126
+    },
+    "Q3": {
+      "annualized_return": 0.09694487812960269,
+      "sharpe_ratio": 0.39915868294666246,
+      "n_weeks": 126
+    },
+    "Q4": {
+      "annualized_return": 0.08818681341538663,
+      "sharpe_ratio": 0.3282283796862074,
+      "n_weeks": 126
+    },
+    "Q5": {
+      "annualized_return": 0.04911480497457166,
+      "sharpe_ratio": 0.155198111341972,
+      "n_weeks": 126
+    },
+    "LS": {
+      "annualized_return": 0.1077956267260835,
+      "sharpe_ratio": 0.49575777588223,
+      "n_weeks": 126
+    }
+  },
+  "M3-E1b-RRF": {
+    "Q1": {
+      "annualized_return": 0.15747349070189226,
+      "sharpe_ratio": 0.8530272792614513,
+      "n_weeks": 126
+    },
+    "Q2": {
+      "annualized_return": 0.14005664851154304,
+      "sharpe_ratio": 0.6358750301518082,
+      "n_weeks": 126
+    },
+    "Q3": {
+      "annualized_return": 0.10174813282321252,
+      "sharpe_ratio": 0.42159503410019844,
+      "n_weeks": 126
+    },
+    "Q4": {
+      "annualized_return": 0.09040987578641979,
+      "sharpe_ratio": 0.3316048810043201,
+      "n_weeks": 126
+    },
+    "Q5": {
+      "annualized_return": 0.027490468533956335,
+      "sharpe_ratio": 0.08637338751586165,
+      "n_weeks": 126
+    },
+    "LS": {
+      "annualized_return": 0.12998302216793592,
+      "sharpe_ratio": 0.5854775025485202,
+      "n_weeks": 126
+    }
+  },
+  "M4-E1a-AVG": {
+    "Q1": {
+      "annualized_return": 0.1428560143907643,
+      "sharpe_ratio": 0.7520176905617452,
+      "n_weeks": 126
+    },
+    "Q2": {
+      "annualized_return": 0.1246281394008307,
+      "sharpe_ratio": 0.5692355459120847,
+      "n_weeks": 126
+    },
+    "Q3": {
+      "annualized_return": 0.09932323651635612,
+      "sharpe_ratio": 0.40928328680747955,
+      "n_weeks": 126
+    },
+    "Q4": {
+      "annualized_return": 0.08838453193819742,
+      "sharpe_ratio": 0.32938195763142464,
+      "n_weeks": 126
+    },
+    "Q5": {
+      "annualized_return": 0.0619871263708254,
+      "sharpe_ratio": 0.1977596164175791,
+      "n_weeks": 126
+    },
+    "LS": {
+      "annualized_return": 0.08086888801993891,
+      "sharpe_ratio": 0.3820491670512166,
+      "n_weeks": 126
+    }
+  }
+}

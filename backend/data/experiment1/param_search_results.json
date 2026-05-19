@@ -1,0 +1,545 @@
+{
+  "generated_at": "2026-05-19T14:11:44.839526",
+  "param_grid": [
+    {
+      "model": "B-LGBM",
+      "model_file": "lightgbm.pkl",
+      "vol_penalty": 0.0
+    },
+    {
+      "model": "B-LGBM",
+      "model_file": "lightgbm.pkl",
+      "vol_penalty": 0.3
+    },
+    {
+      "model": "B-LGBM",
+      "model_file": "lightgbm.pkl",
+      "vol_penalty": 0.5
+    },
+    {
+      "model": "B-LGBM",
+      "model_file": "lightgbm.pkl",
+      "vol_penalty": 0.7
+    },
+    {
+      "model": "B-LGBM",
+      "model_file": "lightgbm.pkl",
+      "vol_penalty": 1.0
+    },
+    {
+      "model": "B-LGBM",
+      "model_file": "lightgbm.pkl",
+      "vol_penalty": 1.5
+    },
+    {
+      "model": "B-LGBM",
+      "model_file": "lightgbm.pkl",
+      "vol_penalty": 2.0
+    },
+    {
+      "model": "E1a-LGBM",
+      "model_file": "e1a_lightgbm.pkl",
+      "vol_penalty": 0.5
+    },
+    {
+      "model": "E1a-LGBM",
+      "model_file": "e1a_lightgbm.pkl",
+      "vol_penalty": 0.7
+    },
+    {
+      "model": "E1a-LGBM",
+      "model_file": "e1a_lightgbm.pkl",
+      "vol_penalty": 1.0
+    },
+    {
+      "model": "E1a-LGBM",
+      "model_file": "e1a_lightgbm.pkl",
+      "vol_penalty": 1.5
+    },
+    {
+      "model": "E1a-LGBM",
+      "model_file": "e1a_lightgbm.pkl",
+      "vol_penalty": 2.0
+    },
+    {
+      "model": "E1a-LGBM",
+      "model_file": "e1a_lightgbm.pkl",
+      "vol_penalty": 3.0
+    },
+    {
+      "model": "E1a-LGBM",
+      "model_file": "e1a_lightgbm.pkl",
+      "vol_penalty": 5.0
+    },
+    {
+      "model": "E1b-LGBM",
+      "model_file": "e1b_lightgbm.pkl",
+      "vol_penalty": 0.5
+    },
+    {
+      "model": "E1b-LGBM",
+      "model_file": "e1b_lightgbm.pkl",
+      "vol_penalty": 0.7
+    },
+    {
+      "model": "E1b-LGBM",
+      "model_file": "e1b_lightgbm.pkl",
+      "vol_penalty": 1.0
+    },
+    {
+      "model": "E1b-LGBM",
+      "model_file": "e1b_lightgbm.pkl",
+      "vol_penalty": 1.5
+    },
+    {
+      "model": "E1b-LGBM",
+      "model_file": "e1b_lightgbm.pkl",
+      "vol_penalty": 2.0
+    },
+    {
+      "model": "E1b-LGBM",
+      "model_file": "e1b_lightgbm.pkl",
+      "vol_penalty": 3.0
+    },
+    {
+      "model": "E1b-LGBM",
+      "model_file": "e1b_lightgbm.pkl",
+      "vol_penalty": 5.0
+    },
+    {
+      "model": "E1c-LGBM",
+      "model_file": "e1c_lightgbm.pkl",
+      "vol_penalty": 0.5
+    },
+    {
+      "model": "E1c-LGBM",
+      "model_file": "e1c_lightgbm.pkl",
+      "vol_penalty": 0.7
+    },
+    {
+      "model": "E1c-LGBM",
+      "model_file": "e1c_lightgbm.pkl",
+      "vol_penalty": 1.0
+    },
+    {
+      "model": "E1c-LGBM",
+      "model_file": "e1c_lightgbm.pkl",
+      "vol_penalty": 1.5
+    },
+    {
+      "model": "E1c-LGBM",
+      "model_file": "e1c_lightgbm.pkl",
+      "vol_penalty": 2.0
+    },
+    {
+      "model": "E1c-LGBM",
+      "model_file": "e1c_lightgbm.pkl",
+      "vol_penalty": 3.0
+    },
+    {
+      "model": "E1c-LGBM",
+      "model_file": "e1c_lightgbm.pkl",
+      "vol_penalty": 5.0
+    }
+  ],
+  "results": [
+    {
+      "model": "B-LGBM",
+      "vol_penalty": 0.0,
+      "annualized_return": -0.2516566714447054,
+      "sharpe_ratio": -0.839898606391274,
+      "max_drawdown": 0.6260544733061797,
+      "calmar_ratio": -0.40197248350564785,
+      "sortino_ratio": -1.0905518187951635,
+      "turnover_rate": 1.342164002046297,
+      "win_rate": 0.47474747474747475,
+      "avg_holding_weeks": 1.5117157974300832
+    },
+    {
+      "model": "B-LGBM",
+      "vol_penalty": 0.3,
+      "annualized_return": -0.025127350536062187,
+      "sharpe_ratio": -0.1982592875305875,
+      "max_drawdown": 0.3850163611549212,
+      "calmar_ratio": -0.06526307209565974,
+      "sortino_ratio": -0.29643689547155183,
+      "turnover_rate": 1.3451179640861972,
+      "win_rate": 0.43434343434343436,
+      "avg_holding_weeks": 1.4955156950672646
+    },
+    {
+      "model": "B-LGBM",
+      "vol_penalty": 0.5,
+      "annualized_return": 0.02000026350661921,
+      "sharpe_ratio": -0.041561067310438835,
+      "max_drawdown": 0.38086221328975367,
+      "calmar_ratio": 0.05251312104150206,
+      "sortino_ratio": -0.0692418222711359,
+      "turnover_rate": 1.2323735726399212,
+      "win_rate": 0.46464646464646464,
+      "avg_holding_weeks": 1.632436837815811
+    },
+    {
+      "model": "B-LGBM",
+      "vol_penalty": 0.7,
+      "annualized_return": 0.07473086605686641,
+      "sharpe_ratio": 0.20663996648381117,
+      "max_drawdown": 0.29519080020617905,
+      "calmar_ratio": 0.253161229972851,
+      "sortino_ratio": 0.35472906184474723,
+      "turnover_rate": 1.1646914627767382,
+      "win_rate": 0.48484848484848486,
+      "avg_holding_weeks": 1.7237521514629948
+    },
+    {
+      "model": "B-LGBM",
+      "vol_penalty": 1.0,
+      "annualized_return": 0.1654700060946972,
+      "sharpe_ratio": 0.7107694834875372,
+      "max_drawdown": 0.16369581689019108,
+      "calmar_ratio": 1.0108383295200283,
+      "sortino_ratio": 1.30268593732284,
+      "turnover_rate": 1.0295217273112716,
+      "win_rate": 0.48484848484848486,
+      "avg_holding_weeks": 1.949317738791423
+    },
+    {
+      "model": "B-LGBM",
+      "vol_penalty": 1.5,
+      "annualized_return": 0.13920569680090522,
+      "sharpe_ratio": 0.6531602483286503,
+      "max_drawdown": 0.1395231110039299,
+      "calmar_ratio": 0.9977250062678453,
+      "sortino_ratio": 1.1468608211621458,
+      "turnover_rate": 0.8753278464281284,
+      "win_rate": 0.5454545454545454,
+      "avg_holding_weeks": 2.290950744558992
+    },
+    {
+      "model": "B-LGBM",
+      "vol_penalty": 2.0,
+      "annualized_return": 0.14442780964805557,
+      "sharpe_ratio": 0.6698585848918466,
+      "max_drawdown": 0.14125660811490848,
+      "calmar_ratio": 1.0224499340276343,
+      "sortino_ratio": 1.1546730382175079,
+      "turnover_rate": 0.775387467876004,
+      "win_rate": 0.5858585858585859,
+      "avg_holding_weeks": 2.5873221216041395
+    },
+    {
+      "model": "E1a-LGBM",
+      "vol_penalty": 0.5,
+      "annualized_return": 0.05811553036555783,
+      "sharpe_ratio": 0.15363113079862567,
+      "max_drawdown": 0.23659098346220486,
+      "calmar_ratio": 0.24563713086235056,
+      "sortino_ratio": 0.2616849957658492,
+      "turnover_rate": 0.9904629296742918,
+      "win_rate": 0.45454545454545453,
+      "avg_holding_weeks": 2.0242914979757085
+    },
+    {
+      "model": "E1a-LGBM",
+      "vol_penalty": 0.7,
+      "annualized_return": 0.13272765202129677,
+      "sharpe_ratio": 0.6024497665041322,
+      "max_drawdown": 0.14476127870241173,
+      "calmar_ratio": 0.9168726140789852,
+      "sortino_ratio": 1.1509385847895843,
+      "turnover_rate": 0.8937529749159218,
+      "win_rate": 0.494949494949495,
+      "avg_holding_weeks": 2.244668911335578
+    },
+    {
+      "model": "E1a-LGBM",
+      "vol_penalty": 1.0,
+      "annualized_return": 0.12599545183099292,
+      "sharpe_ratio": 0.5758462595637606,
+      "max_drawdown": 0.15932716824709514,
+      "calmar_ratio": 0.7907970324031042,
+      "sortino_ratio": 1.0911384930175452,
+      "turnover_rate": 0.7872263079012809,
+      "win_rate": 0.48484848484848486,
+      "avg_holding_weeks": 2.5477707006369426
+    },
+    {
+      "model": "E1a-LGBM",
+      "vol_penalty": 1.5,
+      "annualized_return": 0.10660595185794297,
+      "sharpe_ratio": 0.48172941494290533,
+      "max_drawdown": 0.15187044719751108,
+      "calmar_ratio": 0.7019532359663064,
+      "sortino_ratio": 0.8820544137832189,
+      "turnover_rate": 0.6903223666660366,
+      "win_rate": 0.494949494949495,
+      "avg_holding_weeks": 2.9069767441860463
+    },
+    {
+      "model": "E1a-LGBM",
+      "vol_penalty": 2.0,
+      "annualized_return": 0.10655682152574442,
+      "sharpe_ratio": 0.4758808069590151,
+      "max_drawdown": 0.14447551899635835,
+      "calmar_ratio": 0.737542403487959,
+      "sortino_ratio": 0.8709625706589608,
+      "turnover_rate": 0.6665166158464284,
+      "win_rate": 0.5353535353535354,
+      "avg_holding_weeks": 3.0120481927710845
+    },
+    {
+      "model": "E1a-LGBM",
+      "vol_penalty": 3.0,
+      "annualized_return": 0.09170378926985423,
+      "sharpe_ratio": 0.37784034936175076,
+      "max_drawdown": 0.1485364305476532,
+      "calmar_ratio": 0.6173824760144211,
+      "sortino_ratio": 0.7007213105301833,
+      "turnover_rate": 0.6391501972829825,
+      "win_rate": 0.5050505050505051,
+      "avg_holding_weeks": 3.1397174254317113
+    },
+    {
+      "model": "E1a-LGBM",
+      "vol_penalty": 5.0,
+      "annualized_return": 0.08262322448837489,
+      "sharpe_ratio": 0.3241501981103354,
+      "max_drawdown": 0.15718804837041933,
+      "calmar_ratio": 0.5256329940153609,
+      "sortino_ratio": 0.5924952206684453,
+      "turnover_rate": 0.6091997522198447,
+      "win_rate": 0.5050505050505051,
+      "avg_holding_weeks": 3.2948929159802307
+    },
+    {
+      "model": "E1b-LGBM",
+      "vol_penalty": 0.5,
+      "annualized_return": 0.1387474059549343,
+      "sharpe_ratio": 0.5661408721693649,
+      "max_drawdown": 0.1307888252689623,
+      "calmar_ratio": 1.0608506167832419,
+      "sortino_ratio": 0.9987529649921506,
+      "turnover_rate": 1.2564542388402453,
+      "win_rate": 0.47474747474747475,
+      "avg_holding_weeks": 1.5931528662420382
+    },
+    {
+      "model": "E1b-LGBM",
+      "vol_penalty": 0.7,
+      "annualized_return": 0.13971313493735615,
+      "sharpe_ratio": 0.6355219888352824,
+      "max_drawdown": 0.11284057046272744,
+      "calmar_ratio": 1.2381463011435683,
+      "sortino_ratio": 1.1214112926069308,
+      "turnover_rate": 1.116503528890224,
+      "win_rate": 0.48484848484848486,
+      "avg_holding_weeks": 1.793010752688172
+    },
+    {
+      "model": "E1b-LGBM",
+      "vol_penalty": 1.0,
+      "annualized_return": 0.11508339979470894,
+      "sharpe_ratio": 0.5192195264515755,
+      "max_drawdown": 0.1126618871992483,
+      "calmar_ratio": 1.0214936271321113,
+      "sortino_ratio": 0.8801601231740726,
+      "turnover_rate": 0.9436052279773509,
+      "win_rate": 0.5252525252525253,
+      "avg_holding_weeks": 2.1231422505307855
+    },
+    {
+      "model": "E1b-LGBM",
+      "vol_penalty": 1.5,
+      "annualized_return": 0.10918146962193997,
+      "sharpe_ratio": 0.4883381641566322,
+      "max_drawdown": 0.12082845480522686,
+      "calmar_ratio": 0.9036072653410854,
+      "sortino_ratio": 0.8504724387884424,
+      "turnover_rate": 0.8209864787323232,
+      "win_rate": 0.5050505050505051,
+      "avg_holding_weeks": 2.442002442002442
+    },
+    {
+      "model": "E1b-LGBM",
+      "vol_penalty": 2.0,
+      "annualized_return": 0.08335487566841615,
+      "sharpe_ratio": 0.3478169369901513,
+      "max_drawdown": 0.13677741688637102,
+      "calmar_ratio": 0.6094198703698572,
+      "sortino_ratio": 0.6155326975895469,
+      "turnover_rate": 0.7378987484545089,
+      "win_rate": 0.48484848484848486,
+      "avg_holding_weeks": 2.717391304347826
+    },
+    {
+      "model": "E1b-LGBM",
+      "vol_penalty": 3.0,
+      "annualized_return": 0.06595671356609123,
+      "sharpe_ratio": 0.23106517140814534,
+      "max_drawdown": 0.17752471512715562,
+      "calmar_ratio": 0.3715353860382112,
+      "sortino_ratio": 0.405587692810868,
+      "turnover_rate": 0.6819363730145767,
+      "win_rate": 0.494949494949495,
+      "avg_holding_weeks": 2.9411764705882355
+    },
+    {
+      "model": "E1b-LGBM",
+      "vol_penalty": 5.0,
+      "annualized_return": 0.0946734717791915,
+      "sharpe_ratio": 0.3967535641557808,
+      "max_drawdown": 0.15655247989069,
+      "calmar_ratio": 0.6047395215029209,
+      "sortino_ratio": 0.7373327825000409,
+      "turnover_rate": 0.6265120698381937,
+      "win_rate": 0.5151515151515151,
+      "avg_holding_weeks": 3.2051282051282053
+    },
+    {
+      "model": "E1c-LGBM",
+      "vol_penalty": 0.5,
+      "annualized_return": 0.1514695945924036,
+      "sharpe_ratio": 0.7202342783090677,
+      "max_drawdown": 0.1297454539483318,
+      "calmar_ratio": 1.1674366228871722,
+      "sortino_ratio": 1.3114025953840647,
+      "turnover_rate": 0.9329789211819794,
+      "win_rate": 0.5050505050505051,
+      "avg_holding_weeks": 2.1482277121374866
+    },
+    {
+      "model": "E1c-LGBM",
+      "vol_penalty": 0.7,
+      "annualized_return": 0.11175444594118411,
+      "sharpe_ratio": 0.5106580700810873,
+      "max_drawdown": 0.12440119087531332,
+      "calmar_ratio": 0.8983390364260663,
+      "sortino_ratio": 0.9039124664334692,
+      "turnover_rate": 0.8268972984177271,
+      "win_rate": 0.494949494949495,
+      "avg_holding_weeks": 2.4242424242424243
+    },
+    {
+      "model": "E1c-LGBM",
+      "vol_penalty": 1.0,
+      "annualized_return": 0.07276602083948669,
+      "sharpe_ratio": 0.2771880647832196,
+      "max_drawdown": 0.15848828016797067,
+      "calmar_ratio": 0.4591255628641251,
+      "sortino_ratio": 0.4885404696092077,
+      "turnover_rate": 0.7714532085949011,
+      "win_rate": 0.46464646464646464,
+      "avg_holding_weeks": 2.5974025974025974
+    },
+    {
+      "model": "E1c-LGBM",
+      "vol_penalty": 1.5,
+      "annualized_return": 0.10340179421839824,
+      "sharpe_ratio": 0.4602378182798403,
+      "max_drawdown": 0.13035276636100446,
+      "calmar_ratio": 0.7932458750590143,
+      "sortino_ratio": 0.8557487608903406,
+      "turnover_rate": 0.68246497028272,
+      "win_rate": 0.5151515151515151,
+      "avg_holding_weeks": 2.9411764705882355
+    },
+    {
+      "model": "E1c-LGBM",
+      "vol_penalty": 2.0,
+      "annualized_return": 0.10197953796038695,
+      "sharpe_ratio": 0.4565121692191608,
+      "max_drawdown": 0.13673538728121204,
+      "calmar_ratio": 0.7458167193446003,
+      "sortino_ratio": 0.8364398471910156,
+      "turnover_rate": 0.6385482227074949,
+      "win_rate": 0.48484848484848486,
+      "avg_holding_weeks": 3.1446540880503147
+    },
+    {
+      "model": "E1c-LGBM",
+      "vol_penalty": 3.0,
+      "annualized_return": 0.1050689782128138,
+      "sharpe_ratio": 0.4720014589485527,
+      "max_drawdown": 0.13655007366714378,
+      "calmar_ratio": 0.7694538376371096,
+      "sortino_ratio": 0.8900252924754819,
+      "turnover_rate": 0.6126870468763123,
+      "win_rate": 0.494949494949495,
+      "avg_holding_weeks": 3.278688524590164
+    },
+    {
+      "model": "E1c-LGBM",
+      "vol_penalty": 5.0,
+      "annualized_return": 0.08132793769022784,
+      "sharpe_ratio": 0.3283911817615462,
+      "max_drawdown": 0.14808029080760998,
+      "calmar_ratio": 0.5492151402909611,
+      "sortino_ratio": 0.6009587731021686,
+      "turnover_rate": 0.6022196241948,
+      "win_rate": 0.5050505050505051,
+      "avg_holding_weeks": 3.3333333333333335
+    }
+  ],
+  "better_combos": [
+    {
+      "model": "E1a-LGBM",
+      "vol_penalty": 0.5,
+      "annualized_return": 0.05811553036555783,
+      "sharpe_ratio": 0.15363113079862567,
+      "max_drawdown": 0.23659098346220486,
+      "ann_diff_pp": 3.8115266858938623,
+      "sharpe_diff": 0.19519219810906452,
+      "mdd_diff_pp": -14.42712298275488
+    },
+    {
+      "model": "E1a-LGBM",
+      "vol_penalty": 0.7,
+      "annualized_return": 0.13272765202129677,
+      "sharpe_ratio": 0.6024497665041322,
+      "max_drawdown": 0.14476127870241173,
+      "ann_diff_pp": 5.799678596443036,
+      "sharpe_diff": 0.395809800020321,
+      "mdd_diff_pp": -15.042952150376731
+    },
+    {
+      "model": "E1b-LGBM",
+      "vol_penalty": 0.5,
+      "annualized_return": 0.1387474059549343,
+      "sharpe_ratio": 0.5661408721693649,
+      "max_drawdown": 0.1307888252689623,
+      "ann_diff_pp": 11.874714244831509,
+      "sharpe_diff": 0.6077019394798038,
+      "mdd_diff_pp": -25.007338802079136
+    },
+    {
+      "model": "E1b-LGBM",
+      "vol_penalty": 0.7,
+      "annualized_return": 0.13971313493735615,
+      "sharpe_ratio": 0.6355219888352824,
+      "max_drawdown": 0.11284057046272744,
+      "ann_diff_pp": 6.498226888048975,
+      "sharpe_diff": 0.42888202235147127,
+      "mdd_diff_pp": -18.23502297434516
+    },
+    {
+      "model": "E1c-LGBM",
+      "vol_penalty": 0.5,
+      "annualized_return": 0.1514695945924036,
+      "sharpe_ratio": 0.7202342783090677,
+      "max_drawdown": 0.1297454539483318,
+      "ann_diff_pp": 13.146933108578441,
+      "sharpe_diff": 0.7617953456195066,
+      "mdd_diff_pp": -25.111675934142184
+    },
+    {
+      "model": "E1c-LGBM",
+      "vol_penalty": 0.7,
+      "annualized_return": 0.11175444594118411,
+      "sharpe_ratio": 0.5106580700810873,
+      "max_drawdown": 0.12440119087531332,
+      "ann_diff_pp": 3.7023579884317703,
+      "sharpe_diff": 0.30401810359727616,
+      "mdd_diff_pp": -17.078960933086574
+    }
+  ]
+}

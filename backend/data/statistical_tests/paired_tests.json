@@ -1,0 +1,122 @@
+[
+  {
+    "method_a": "B-LGBM",
+    "method_b": "B-XGB",
+    "t_stat": 2431.0,
+    "p_value": 0.8779466241767944,
+    "significant": false,
+    "test_method": "wilcoxon"
+  },
+  {
+    "method_a": "B-LGBM",
+    "method_b": "E1a-LGBM",
+    "t_stat": 0.6627245948670714,
+    "p_value": 0.5090469661969439,
+    "significant": false,
+    "test_method": "paired-t"
+  },
+  {
+    "method_a": "B-LGBM",
+    "method_b": "E1b-LGBM",
+    "t_stat": 2270.0,
+    "p_value": 0.47429433176220204,
+    "significant": false,
+    "test_method": "wilcoxon"
+  },
+  {
+    "method_a": "B-LGBM",
+    "method_b": "E2a-AVG",
+    "t_stat": 0.08211708643744146,
+    "p_value": 0.9347194022727552,
+    "significant": false,
+    "test_method": "paired-t"
+  },
+  {
+    "method_a": "B-LGBM",
+    "method_b": "E2b-RRF",
+    "t_stat": 2287.0,
+    "p_value": 0.5117118680308095,
+    "significant": false,
+    "test_method": "wilcoxon"
+  },
+  {
+    "method_a": "B-XGB",
+    "method_b": "E1a-LGBM",
+    "t_stat": 2375.0,
+    "p_value": 0.7270675547903731,
+    "significant": false,
+    "test_method": "wilcoxon"
+  },
+  {
+    "method_a": "B-XGB",
+    "method_b": "E1b-LGBM",
+    "t_stat": 2437.0,
+    "p_value": 0.8944852053985148,
+    "significant": false,
+    "test_method": "wilcoxon"
+  },
+  {
+    "method_a": "B-XGB",
+    "method_b": "E2a-AVG",
+    "t_stat": 2261.0,
+    "p_value": 0.4551106377025528,
+    "significant": false,
+    "test_method": "wilcoxon"
+  },
+  {
+    "method_a": "B-XGB",
+    "method_b": "E2b-RRF",
+    "t_stat": 1894.0,
+    "p_value": 0.04257470591106632,
+    "significant": true,
+    "test_method": "wilcoxon"
+  },
+  {
+    "method_a": "E1a-LGBM",
+    "method_b": "E1b-LGBM",
+    "t_stat": 2389.0,
+    "p_value": 0.7640513610804953,
+    "significant": false,
+    "test_method": "wilcoxon"
+  },
+  {
+    "method_a": "E1a-LGBM",
+    "method_b": "E2a-AVG",
+    "t_stat": 2191.0,
+    "p_value": 0.32156728163554127,
+    "significant": false,
+    "test_method": "wilcoxon"
+  },
+  {
+    "method_a": "E1a-LGBM",
+    "method_b": "E2b-RRF",
+    "t_stat": 2143.0,
+    "p_value": 0.24654741856723594,
+    "significant": false,
+    "test_method": "wilcoxon"
+  },
+  {
+    "method_a": "E1b-LGBM",
+    "method_b": "E2a-AVG",
+    "t_stat": 2353.0,
+    "p_value": 0.6702423987542299,
+    "significant": false,
+    "test_method": "wilcoxon"
+  },
+  {
+    "method_a": "E1b-LGBM",
+    "method_b": "E2b-RRF",
+    "t_stat": 2320.0,
+    "p_value": 0.5885110872066617,
+    "significant": false,
+    "test_method": "wilcoxon"
+  },
+  {
+    "method_a": "E2a-AVG",
+    "method_b": "E2b-RRF",
+    "t_stat": 2048.0,
+    "p_value": 0.1361312504103828,
+    "significant": false,
+    "test_method": "wilcoxon"
+  }
+]

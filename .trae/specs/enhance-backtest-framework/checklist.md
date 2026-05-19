@@ -1,0 +1,20 @@
+- [x] 回测结果包含 weekly_return 列，首行为0，后续为周度收益率
+- [x] 回测结果包含 excess_return_hs300 和 excess_return_zz500 超额收益率列
+- [x] 基准数据缺失时超额收益率列为NaN，不影响其他列
+- [x] calmar_ratio 函数正确计算年化收益/最大回撤，最大回撤为0时返回NaN
+- [x] sortino_ratio 函数正确计算年化超额收益/下行标准差，无下行波动时返回NaN
+- [x] aggregate_metrics 返回字典包含 calmar_ratio 和 sortino_ratio 键
+- [x] factor_ic 函数按期分组计算Spearman秩相关系数，无groupby时计算全局IC
+- [x] factor_icir 函数返回IC均值/IC标准差
+- [x] mean_average_precision 函数正确计算多query AP均值
+- [x] compute_backtest_metrics(extended=True) 返回 sharpe_ci 和 annualized_return_ci 置信区间
+- [x] run_multi_topn_backtest 函数返回各Top N的回测结果和指标汇总表
+- [x] POST /api/v1/backtest/run 端点可在线触发回测，返回结果ID和核心指标
+- [x] POST /api/v1/backtest/run 回测失败时返回HTTP 500和错误信息
+- [x] bootstrap_metric 测试通过：置信区间包含点估计
+- [x] paired_significance_test 测试通过：相同分布不显著、不同分布显著
+- [x] metrics_by_year 测试通过：分年度指标正确
+- [x] quantile_portfolio_returns 测试通过：分组收益正确、多空收益=Q1-Q5
+- [x] calmar_ratio 和 sortino_ratio 测试通过
+- [x] factor_ic / factor_icir / mean_average_precision 测试通过
+- [x] 全部单元测试通过（45个测试全部通过）

@@ -1,0 +1,50 @@
+{
+  "M1-B-LGBM": {
+    "2023": {
+      "annualized_return": 0.45689608723697916,
+      "sharpe_ratio": 1.220300444984766,
+      "max_drawdown": 0.10334782213516769
+    },
+    "2024": {
+      "annualized_return": 2.4434859235760484,
+      "sharpe_ratio": 2.4955565832650914,
+      "max_drawdown": 0.1302629201486848
+    }
+  },
+  "M2-B-XGB": {
+    "2023": {
+      "annualized_return": 0.09340104109235114,
+      "sharpe_ratio": 0.2752160351936939,
+      "max_drawdown": 0.09447419602932938
+    },
+    "2024": {
+      "annualized_return": 2.393280656676074,
+      "sharpe_ratio": 2.5101109209619006,
+      "max_drawdown": 0.12185907535874974
+    }
+  },
+  "M3-E1b-RRF": {
+    "2023": {
+      "annualized_return": 0.03247785083736532,
+      "sharpe_ratio": 0.011814275540257189,
+      "max_drawdown": 0.08931041254400407
+    },
+    "2024": {
+      "annualized_return": 1.0181370714366098,
+      "sharpe_ratio": 1.4910040912420657,
+      "max_drawdown": 0.12628002378471825
+    }
+  },
+  "M4-E1a-AVG": {
+    "2023": {
+      "annualized_return": -0.004192808050224595,
+      "sharpe_ratio": -0.14556045250742677,
+      "max_drawdown": 0.10495785375715116
+    },
+    "2024": {
+      "annualized_return": 2.77346792490888,
+      "sharpe_ratio": 2.733660928159763,
+      "max_drawdown": 0.14723229468117627
+    }
+  }
+}
