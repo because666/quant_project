@@ -1,0 +1,11 @@
+- [x] 图表生成脚本可运行：`python scripts/generate_figures.py` 无报错
+- [x] 图1-综合对比分组柱状图：4种方法×3指标，数据与experiment4_summary.json一致
+- [x] 图2-分位数单调性折线图：Q1~Q5递减，LS>0，4种方法叠加显示
+- [x] 图3-分年度对比柱状图：2023 vs 2024，数据与yearly_analysis.json一致
+- [x] 图4-Bootstrap CI误差棒图：点估计+CI上下界，数据与bootstrap_ci.json一致
+- [x] 图5-Top N敏感性折线图：5条线（Top5~50），数据与sensitivity_topn.json一致
+- [x] 图6-持有期敏感性折线图：3个持有期×4种方法，数据与sensitivity_holding.json一致
+- [x] 图7-配对检验热力图：6x6矩阵，p值颜色编码正确，显著对标注星号
+- [x] 图8-DSR对比柱状图：6个方法DSR值+0.95阈值虚线
+- [x] 所有图表中文显示正常，无方块/乱码
+- [x] 所有图表DPI=300，配色统一（Set2调色板）

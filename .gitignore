@@ -4,86 +4,62 @@ __pycache__/
 *$py.class
 *.so
 .Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
 *.egg-info/
-.installed.cfg
+dist/
+build/
 *.egg
 
-# Virtual environments
+# 虚拟环境
+.venv/
 venv/
-venv310/
-ENV/
 env/
-.venv
 
-# IDEs
-.vscode/
+# IDE
 .idea/
+.vscode/
 *.swp
 *.swo
-*~
 
-# Environment variables - 必须保留，防止敏感信息泄露
+# 环境变量
 .env
-.env.local
-.env.*.local
 
-# Database - SQLite数据库文件通常很大，建议忽略
-*.db
-*.sqlite
-*.sqlite3
+# 大文件 - 原始数据文件已分卷压缩
+# 使用 extract_data.py 解压还原
+project/backend/data/*.parquet
+project/backend/data/*.parquet.gz
+project/backend/data/*.pkl
+project/backend/data/qlib_cn_data/
+project/backend/data/backtest_results/*.parquet
+project/backend/data/experiment2/*.parquet
+project/backend/data/experiment4/*.parquet
+project/backend/data/query_smoke_out/*.parquet
+project/backend/data/query_smoke_out/*.parquet.gz
 
-# Logs - 日志文件通常很大且不需要版本控制
-*.log
-logs/
+# 分卷压缩包（太大不提交，本地保留）
+project/backend/data_archives/
 
-# Node.js
+# 模型文件
+project/backend/models/*.txt
+project/backend/models/*.pkl
+project/backend/models/*.bin
+
+# 论文实验数据大文件（已分卷压缩在data_archives/中）
+thesis_experiments/data/*.parquet
+thesis_experiments/data/*.parquet.gz
+thesis_experiments/models/*.txt
+thesis_experiments/models/*.pkl
+thesis_experiments/models/*.bin
+
+# Node
 node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
-# Build outputs
-dist/
-build/
-*.tsbuildinfo
-
-# Cache
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
+# 日志
+*.log
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Source map files - 仅开发时需要
-*.map
-
-# 大文件 - 原始数据文件已分卷压缩为data_archives/
-# 使用 extract_data.py 解压还原
-backend/data/*.parquet
-backend/data/*.parquet.gz
-backend/data/*.pkl
-backend/data/qlib_cn_data/
-backend/data/backtest_results/*.parquet
-backend/data/experiment2/*.parquet
-backend/data/experiment4/*.parquet
-backend/data/query_smoke_out/*.parquet
-backend/data/query_smoke_out/*.parquet.gz
-
-# 模型文件（太大，已分卷压缩）
-backend/models/*.txt
-backend/models/*.pkl
-backend/models/*.bin
+# 临时文件
+*.tmp
+*.bak

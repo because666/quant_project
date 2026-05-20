@@ -1,0 +1,17 @@
+- [ ] 三个顶级目录 `project/`、`thesis/`、`thesis_experiments/` 已创建
+- [ ] `project/backend/` 包含完整后端代码（src/、tests/、配置文件）
+- [ ] `project/frontend/` 包含完整前端代码
+- [ ] `project/` 根目录包含项目配置文件（.gitignore、README.md等）
+- [ ] `thesis/docs/` 包含论文写作指南、协作方案、行动计划、实验方法论、参考文献
+- [ ] `thesis/ppt/` 包含组会PPT、演讲稿、截图、Mermaid图表
+- [ ] `thesis_experiments/scripts/` 包含所有实验运行脚本
+- [ ] `thesis_experiments/data/` 包含所有实验结果数据
+- [ ] `thesis_experiments/figures/` 包含论文图表
+- [ ] `thesis_experiments/models/` 包含模型文件
+- [ ] `thesis_experiments/reference/qlib/` 包含Qlib参考代码
+- [ ] 共享文件在两个目录中均有副本，且副本添加了双重用途注释
+- [ ] `project/backend/` 后端可正常启动（python main.py）
+- [ ] `thesis_experiments/scripts/` 实验脚本import路径正确
+- [ ] `.trae/rules/project_rules.md` 已更新目录结构说明
+- [ ] `.gitignore` 已更新路径规则
+- [ ] 所有变更已提交并推送到远程仓库
