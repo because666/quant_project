@@ -35,8 +35,11 @@ project/backend/data/experiment4/*.parquet
 project/backend/data/query_smoke_out/*.parquet
 project/backend/data/query_smoke_out/*.parquet.gz
 
-# 分卷压缩包（太大不提交，本地保留）
+# 原始分卷压缩包（本地保留，不提交）
 project/backend/data_archives/
+
+# 二次分卷压缩包（每卷50MB，用于git推送）
+# data_archives_split/ 目录需要提交到git
 
 # 模型文件
 project/backend/models/*.txt
