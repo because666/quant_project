@@ -15,6 +15,9 @@ DATA_OUT_DIR = PROJECT_ROOT / "data"
 
 logger = logging.getLogger(__name__)
 
+NON_FACTOR_COLUMNS: set[str] = {"date", "stock_code", "close", "future_return_1w", "future_close", "group_id", "group_size"}
+ZERO_FACTOR_COLUMNS: set[str] = {"avg_turnover_4w", "avg_turnover_8w", "avg_turnover_12w", "turnover_change_1w", "high_low_range_4w", "open_close_ratio_4w"}
+
 # 内存缓存：(data_dir 绝对路径, 文件名, parquet mtime) -> 解析后的元组，避免重复 IO
 _split_cache: dict[tuple[str, str, float, bool, str], tuple[pd.DataFrame, np.ndarray, list[int]]] = {}
 _factor_cols_cache: dict[tuple[str, float], list[str]] = {}
@@ -116,7 +119,7 @@ def to_query_format(
     out = out.sort_values(["date", "stock_code"]).reset_index(drop=True)
 
     if factor_cols is None:
-        forbidden = {"date", "stock_code", "future_return_1w", "close"}
+        forbidden = NON_FACTOR_COLUMNS | ZERO_FACTOR_COLUMNS
         factor_cols = [c for c in out.columns if c not in forbidden]
 
     # group_id：date -> code 0..(n_groups-1)
@@ -161,7 +164,7 @@ def generate_query_datasets(
     train_df, val_df, test_df = split_by_time(df_with_label, train_end=train_end, val_end=val_end)
 
     # 推断因子列：去除已知字段
-    forbidden = {"date", "stock_code", "future_return_1w", "close"}
+    forbidden = NON_FACTOR_COLUMNS | ZERO_FACTOR_COLUMNS
     factor_cols = [c for c in df_with_label.columns if c not in forbidden]
     with open(output_dir / "factor_columns.pkl", "wb") as f:
         pickle.dump(factor_cols, f)
@@ -232,7 +235,7 @@ def fill_missing_factors(
 
     out = df.copy()
     if factor_cols is None:
-        forbidden = {"date", "stock_code", "future_return_1w", "group_id", "group_size"}
+        forbidden = NON_FACTOR_COLUMNS
         factor_cols = [c for c in out.columns if c not in forbidden]
 
     present = [c for c in factor_cols if c in out.columns]

@@ -1,4 +1,4 @@
-﻿# [共享文件] 本文件同时存在于 project/backend/src/ 和 thesis_experiments/src/，修改时请同步更新两处
+# [共享文件] 本文件同时存在于 project/backend/src/ 和 thesis_experiments/src/，修改时请同步更新两处
 from functools import lru_cache
 from pathlib import Path
 
@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     # 量化排序模型与因子数据路径（空字符串表示使用 backend/data、backend/models 下默认文件）
     quant_data_dir: str = Field(default="", description="factor_columns.pkl 所在目录，默认 backend/data")
     lightgbm_model_path: str = Field(default="", description="LightGBM 模型文件路径，默认 backend/models/lightgbm.pkl")
-    xgboost_model_path: str = Field(default="", description="XGBoost 模型文件路径，默认 backend/models/xgboost.pkl")
+    xgboost_model_path: str = Field(default="", description="XGBoost 模型文件路径，默认 backend/models/xgboost.json")
     # API 默认使用的排序模型：lightgbm | xgboost
     default_predict_model: str = Field(default="lightgbm", description="默认预测模型类型")
 

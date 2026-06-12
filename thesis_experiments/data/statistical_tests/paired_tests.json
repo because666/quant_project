@@ -2,120 +2,120 @@
   {
     "method_a": "B-LGBM",
     "method_b": "B-XGB",
-    "t_stat": 2431.0,
-    "p_value": 0.8779466241767944,
-    "significant": false,
-    "test_method": "wilcoxon"
-  },
-  {
-    "method_a": "B-LGBM",
-    "method_b": "E1a-LGBM",
-    "t_stat": 0.6627245948670714,
-    "p_value": 0.5090469661969439,
-    "significant": false,
-    "test_method": "paired-t"
-  },
-  {
-    "method_a": "B-LGBM",
-    "method_b": "E1b-LGBM",
-    "t_stat": 2270.0,
-    "p_value": 0.47429433176220204,
-    "significant": false,
-    "test_method": "wilcoxon"
-  },
-  {
-    "method_a": "B-LGBM",
-    "method_b": "E2a-AVG",
-    "t_stat": 0.08211708643744146,
-    "p_value": 0.9347194022727552,
-    "significant": false,
-    "test_method": "paired-t"
-  },
-  {
-    "method_a": "B-LGBM",
-    "method_b": "E2b-RRF",
     "t_stat": 2287.0,
     "p_value": 0.5117118680308095,
     "significant": false,
     "test_method": "wilcoxon"
   },
   {
+    "method_a": "B-LGBM",
+    "method_b": "E1a-LGBM",
+    "t_stat": 2045.0,
+    "p_value": 0.133400933007719,
+    "significant": false,
+    "test_method": "wilcoxon"
+  },
+  {
+    "method_a": "B-LGBM",
+    "method_b": "E1b-LGBM",
+    "t_stat": 2396.0,
+    "p_value": 0.7827532300604804,
+    "significant": false,
+    "test_method": "wilcoxon"
+  },
+  {
+    "method_a": "B-LGBM",
+    "method_b": "E2a-AVG",
+    "t_stat": 2137.0,
+    "p_value": 0.23811241425869045,
+    "significant": false,
+    "test_method": "wilcoxon"
+  },
+  {
+    "method_a": "B-LGBM",
+    "method_b": "E2b-RRF",
+    "t_stat": 2314.0,
+    "p_value": 0.5741591790157523,
+    "significant": false,
+    "test_method": "wilcoxon"
+  },
+  {
     "method_a": "B-XGB",
     "method_b": "E1a-LGBM",
-    "t_stat": 2375.0,
-    "p_value": 0.7270675547903731,
+    "t_stat": 2122.0,
+    "p_value": 0.2179220807724287,
     "significant": false,
     "test_method": "wilcoxon"
   },
   {
     "method_a": "B-XGB",
     "method_b": "E1b-LGBM",
-    "t_stat": 2437.0,
-    "p_value": 0.8944852053985148,
+    "t_stat": 2245.0,
+    "p_value": 0.42210962215607883,
     "significant": false,
     "test_method": "wilcoxon"
   },
   {
     "method_a": "B-XGB",
     "method_b": "E2a-AVG",
-    "t_stat": 2261.0,
-    "p_value": 0.4551106377025528,
+    "t_stat": 2424.0,
+    "p_value": 0.858719222832677,
     "significant": false,
     "test_method": "wilcoxon"
   },
   {
     "method_a": "B-XGB",
     "method_b": "E2b-RRF",
-    "t_stat": 1894.0,
-    "p_value": 0.04257470591106632,
-    "significant": true,
+    "t_stat": 2324.0,
+    "p_value": 0.5981701469772194,
+    "significant": false,
     "test_method": "wilcoxon"
   },
   {
     "method_a": "E1a-LGBM",
     "method_b": "E1b-LGBM",
-    "t_stat": 2389.0,
-    "p_value": 0.7640513610804953,
+    "t_stat": 2339.0,
+    "p_value": 0.6350154960603531,
     "significant": false,
     "test_method": "wilcoxon"
   },
   {
     "method_a": "E1a-LGBM",
     "method_b": "E2a-AVG",
-    "t_stat": 2191.0,
-    "p_value": 0.32156728163554127,
+    "t_stat": 2035.0,
+    "p_value": 0.12460522691058787,
     "significant": false,
     "test_method": "wilcoxon"
   },
   {
     "method_a": "E1a-LGBM",
     "method_b": "E2b-RRF",
-    "t_stat": 2143.0,
-    "p_value": 0.24654741856723594,
+    "t_stat": 2088.0,
+    "p_value": 0.17677804702565847,
     "significant": false,
     "test_method": "wilcoxon"
   },
   {
     "method_a": "E1b-LGBM",
     "method_b": "E2a-AVG",
-    "t_stat": 2353.0,
-    "p_value": 0.6702423987542299,
+    "t_stat": 2062.0,
+    "p_value": 0.1494463912526307,
     "significant": false,
     "test_method": "wilcoxon"
   },
   {
     "method_a": "E1b-LGBM",
     "method_b": "E2b-RRF",
-    "t_stat": 2320.0,
-    "p_value": 0.5885110872066617,
+    "t_stat": 2018.0,
+    "p_value": 0.11069827615638081,
     "significant": false,
     "test_method": "wilcoxon"
   },
   {
     "method_a": "E2a-AVG",
     "method_b": "E2b-RRF",
-    "t_stat": 2048.0,
-    "p_value": 0.1361312504103828,
+    "t_stat": 2373.0,
+    "p_value": 0.7218334077522169,
     "significant": false,
     "test_method": "wilcoxon"
   }

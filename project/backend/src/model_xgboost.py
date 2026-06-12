@@ -25,7 +25,7 @@ from .model_lightgbm import future_return_to_relevance
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 MODELS_DIR = PROJECT_ROOT / "models"
-DEFAULT_MODEL_PATH = MODELS_DIR / "xgboost.pkl"
+DEFAULT_MODEL_PATH = MODELS_DIR / "xgboost.json"
 DEFAULT_IMPORTANCE_PATH = MODELS_DIR / "xgboost_feature_importance.json"
 DEFAULT_LOG_PATH = MODELS_DIR / "xgboost_training.log"
 DEFAULT_TUNE_LOG_PATH = MODELS_DIR / "xgboost_optuna_trials.jsonl"
@@ -34,6 +34,7 @@ RANDOM_STATE = 42
 N_OPTUNA_TRIALS = 20
 EARLY_STOPPING_ROUNDS = 20
 MAX_BOOST_ROUND = 2000
+_EXCLUDE_COLS = {"group_id", "group_size"}
 
 
 def _setup_file_logger(log_path: Path) -> logging.Logger:
@@ -60,6 +61,7 @@ def get_base_params() -> dict[str, Any]:
     return {
         "objective": "rank:ndcg",
         "eval_metric": ["ndcg@5", "ndcg@20", "ndcg@10"],
+        "ndcg_exp_gain": False,
         "booster": "gbtree",
         "eta": 0.05,
         "max_depth": 6,
@@ -86,7 +88,9 @@ def build_dmats(
             f"group 与样本数不一致: train {sum(g_tr)} vs {len(X_tr)}, val {sum(g_va)} vs {len(X_va)}"
         )
 
-    feat_names = list(X_tr.columns)
+    feat_names = [c for c in X_tr.columns if c not in _EXCLUDE_COLS]
+    X_tr = X_tr[feat_names]
+    X_va = X_va[feat_names]
     X_tr_m = np.ascontiguousarray(X_tr.to_numpy(dtype=np.float32, copy=True))
     X_va_m = np.ascontiguousarray(X_va.to_numpy(dtype=np.float32, copy=True))
 
@@ -245,7 +249,11 @@ def _save_xgb_model(bst: xgb.Booster, model_path: Path) -> None:
         str(model_path.resolve()).encode("ascii")
         bst.save_model(str(model_path.resolve()))
     except (UnicodeEncodeError, OSError, XGBoostError):
-        model_path.write_bytes(bst.save_raw())
+        import tempfile
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False, dir=str(model_path.parent)) as tmp:
+            tmp_name = tmp.name
+        bst.save_model(tmp_name)
+        Path(tmp_name).replace(model_path)
 
 
 def train_final_xgboost(

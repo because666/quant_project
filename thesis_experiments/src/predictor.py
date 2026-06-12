@@ -1,4 +1,4 @@
-﻿# [共享文件] 本文件同时存在于 project/backend/src/ 和 thesis_experiments/src/，修改时请同步更新两处
+# [共享文件] 本文件同时存在于 project/backend/src/ 和 thesis_experiments/src/，修改时请同步更新两处
 """
 统一预测接口：加载 LightGBM / XGBoost 排序模型，对单截面因子输出得分与 Top N。
 
@@ -35,7 +35,7 @@ def _resolve_backend_paths() -> tuple[Path, Path, Path]:
     s = get_settings()
     data_dir = Path(s.quant_data_dir) if s.quant_data_dir.strip() else PROJECT_ROOT / "data"
     lgb_p = Path(s.lightgbm_model_path) if s.lightgbm_model_path.strip() else PROJECT_ROOT / "models" / "lightgbm.pkl"
-    xgb_p = Path(s.xgboost_model_path) if s.xgboost_model_path.strip() else PROJECT_ROOT / "models" / "xgboost.pkl"
+    xgb_p = Path(s.xgboost_model_path) if s.xgboost_model_path.strip() else PROJECT_ROOT / "models" / "xgboost.json"
     return data_dir, lgb_p, xgb_p
 
 
@@ -62,7 +62,10 @@ class ModelPredictor:
         else:
             raise ValueError("model_type 必须为 'lightgbm' 或 'xgboost'")
 
-        self._factor_cols: list[str] = load_factor_columns(data_dir=self._data_dir)
+        self._factor_cols: list[str] = [
+            c for c in load_factor_columns(data_dir=self._data_dir)
+            if c not in {"group_id", "group_size"}
+        ]
         self._model_path = mp
 
     def get_model_trained_at(self) -> str | None:

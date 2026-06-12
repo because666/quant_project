@@ -1,4 +1,4 @@
-﻿# [共享文件] 本文件同时存在于 project/backend/src/ 和 thesis_experiments/src/，修改时请同步更新两处
+# [共享文件] 本文件同时存在于 project/backend/src/ 和 thesis_experiments/src/，修改时请同步更新两处
 """
 多模型融合模块：提供分数平均、RRF、Stacking、加权RRF四种融合策略，
 以及 FusionPredictor 封装类，提供与 ModelPredictor 一致的 predict 接口。
@@ -239,6 +239,7 @@ class FusionPredictor:
         k: int = 60,
         weights: list[float] | None = None,
         ridge_model: Ridge | None = None,
+        predictors: list[ModelPredictor] | None = None,
     ) -> None:
         """
         初始化融合预测器。
@@ -250,6 +251,7 @@ class FusionPredictor:
             k: RRF平滑常数
             weights: 加权RRF的权重
             ridge_model: Stacking的Ridge模型
+            predictors: 预创建的子预测器列表，传入时跳过自动创建，直接使用该列表
 
         异常:
             ValueError: fusion_type 不合法或 model_types 为空时抛出
@@ -267,10 +269,13 @@ class FusionPredictor:
         self.weights: list[float] | None = weights
         self.ridge_model: Ridge | None = ridge_model
 
-        self._predictors: list[ModelPredictor] = []
-        for mt in model_types:
-            predictor = ModelPredictor(mt, data_dir=data_dir)
-            self._predictors.append(predictor)
+        if predictors is not None:
+            self._predictors: list[ModelPredictor] = predictors
+        else:
+            self._predictors = []
+            for mt in model_types:
+                predictor = ModelPredictor(mt, data_dir=data_dir)
+                self._predictors.append(predictor)
 
         self._factor_cols: list[str] = self._predictors[0]._factor_cols
 

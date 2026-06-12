@@ -1,32 +1,32 @@
 {
-  "generated_at": "2026-05-19T20:25:00.052443",
+  "generated_at": "2026-05-31T14:29:56.634283",
   "methods": {
     "M1-B-LGBM": {
-      "annualized_return": 0.1654700060946972,
-      "sharpe_ratio": 0.7107694834875372,
-      "max_drawdown": 0.16369581689019108,
-      "turnover_rate": 1.0295217273112718,
-      "win_rate": 0.48484848484848486
+      "annualized_return": 0.09258716914259213,
+      "sharpe_ratio": 0.2872835471433293,
+      "max_drawdown": 0.264084835276595,
+      "turnover_rate": 1.2032764493675547,
+      "win_rate": 0.45454545454545453
     },
     "M2-B-XGB": {
-      "annualized_return": 0.13699399026042136,
-      "sharpe_ratio": 0.6101397640013944,
-      "max_drawdown": 0.12185907535874974,
-      "turnover_rate": 0.6802150667807184,
-      "win_rate": 0.5151515151515151
+      "annualized_return": 0.03419741313008484,
+      "sharpe_ratio": 0.018445641860838195,
+      "max_drawdown": 0.28153892979004536,
+      "turnover_rate": 1.4983921524157067,
+      "win_rate": 0.494949494949495
     },
     "M3-E1b-RRF": {
-      "annualized_return": 0.07425805856806456,
-      "sharpe_ratio": 0.27584077648733846,
-      "max_drawdown": 0.14781804775730034,
-      "turnover_rate": 0.6086749463009656,
+      "annualized_return": -0.04011488746838876,
+      "sharpe_ratio": -0.34187198383185546,
+      "max_drawdown": 0.3260453169710835,
+      "turnover_rate": 1.254108199803139,
       "win_rate": 0.5050505050505051
     },
     "M4-E1a-AVG": {
-      "annualized_return": 0.1515189916241635,
-      "sharpe_ratio": 0.6745469822065862,
-      "max_drawdown": 0.14723229468117627,
-      "turnover_rate": 0.8128667070371024,
+      "annualized_return": 0.09009420768141863,
+      "sharpe_ratio": 0.31172511461044106,
+      "max_drawdown": 0.15824726551289647,
+      "turnover_rate": 1.1948407682542617,
       "win_rate": 0.46464646464646464
     }
   }

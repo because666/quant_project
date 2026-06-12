@@ -1,0 +1,474 @@
+\documentclass[11pt,a4paper]{article}
+
+% 中文支持
+\usepackage[UTF8]{ctex}
+
+% 基础包
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+
+% 页面设置
+\geometry{left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm}
+
+% 标题格式
+\titleformat{\section}{\large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{1em}{}
+
+% 页眉页脚
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Return-Sharpe Aware Ranking with Multi-Model RRF Fusion}
+\fancyhead[R]{\small A PREPRINT}
+\fancyfoot[C]{\thepage}
+
+% 超链接设置
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    citecolor=blue,
+}
+
+\begin{document}
+
+% 标题部分
+\begin{center}
+    {\Large\bfseries Return-Sharpe Aware Ranking with Multi-Model RRF Fusion for Quantitative Stock Selection}\\[0.5em]
+    {\large A PREPRINT}\\[1.5em]
+\end{center}
+
+% 作者信息
+\noindent
+\begin{minipage}[t]{0.48\textwidth}
+\textbf{Zheng Luo}\\
+School of Computer Science\\
+Chongqing University\\
+Chongqing, China\\
+\texttt{luozheng@cqu.edu.cn}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.48\textwidth}
+\textbf{[Co-author Name]}\\
+School of Economics and Business\\
+Chongqing University\\
+Chongqing, China\\
+\texttt{[email@cqu.edu.cn]}
+\end{minipage}
+
+\vspace{1em}
+\noindent\rule{\textwidth}{0.4pt}
+
+% 日期
+\begin{center}
+    {\large \today}
+\end{center}
+
+\vspace{1em}
+
+% 摘要
+\noindent\textbf{ABSTRACT}
+
+\noindent
+量化选股策略的核心是以算法代替主观判断，筛选具有超额收益潜力的股票并构建最优的投资组合。传统多因子选股方法存在两个关键局限：一是损失函数未能直接对齐投资目标，同时过度依赖历史有效的高收益、低风险，形成路径依赖；二是单模型预测稳定性不足，且模型从数据中自动学习规律和相关性而决策逻辑高度抽象从而缺乏可解释性。针对这些不足，本研究提出一种融合收益-夏普感知排序损失与递归排名融合的多模型量化选股框架，并系统对比四种排序策略，给出实际应用建议。【对比的因子】【实验数据】显著优于传统单因子、多因子选股策略及单一排序模型，为量化投资领域提供了新的优化目标和融合策略，具有较强的实际应用价值。
+
+\vspace{0.5em}
+\noindent\textbf{Keywords} 排序学习 · 收益感知损失 · RRF多模型融合 · 可解释AI 
+
+\vspace{1em}
+\noindent\rule{\textwidth}{0.4pt}
+
+\section{Introduction}
+
+现在量化交易的策略，是使用先进的机器学习模型来广泛寻找金融市场中的有机会的投资机会，其中关键的任务便是排序。正确的排序帮助决策资金在股票间的分配，并最终决定了投资组合的利润和风险。
+
+传统多因子选股模型的核心思想是，通过构建一系列能够预测股票未来收益的因子，如价值因子、成长因子等，依据各因子进行线性加权打分并排序，后构建投资组合。这种方法的逻辑在于，不同因子从不同维度刻画了股票的收益特征，通过多维度信息的整合，可以获得比单一指标更稳健的股票评估。传统多因子选股模型，如等权加权或线性回归方法，因实现简单、可解释性强，且在过去的实践中创造了超额收益，成为中国A股市场量化投资的主流框架。
+
+然而，这种传统方法在理论上存在局限，首先是损失函数与优化目标错位。用OLS或简单的排序损失训练模型，容易忽视投资组合的实际风险调整后收益，导致模型可能选入夏普比率较低的股票；其次，单模型预测存在系统性偏差。金融时间序列具有高度噪声、非平稳性等特征，不同的模型对数据的假设不同，其预测误差则会出现相应的异质性，导致难以在不同市场环境下保持稳定；最后是模型决策缺乏可解释性。多因子选股逐渐演变为"黑箱"操作，而这样的模型输出难以满足对决策透明度的要求和帮助合风险控制。
+
+针对上述问题，本文提出一种融合模型。首先，设计了一种将未来收益预期与历史波动率嵌入排序损失函数的优化目标，通过收益加权NDCG和夏普惩罚项引导模型优先学习高收益低波动个股的特征；其次，采用RRF算法对LightGBM和XGBoost等多个差异化基础排序模型的输出进行融合，并引入大语言模型（LLM）生成选股决策的自然语言解释，提升策略透明度。
+
+为验证该框架的有效性，我们在A股市场设计了四组核心实验：对比标准LambdaRank与收益-夏普感知损失函数，验证改进损失函数的有效性；评估分数平均、RRF、Stacking及加权RRF四种融合策略，证明RRF融合的优越性；测试纯模型输出与LLM增强解释方案，验证AI解读的实用价值；系统对比Pointwise、Pairwise、Listwise及本文方法的综合表现。实验中包含基线对比和消融实验，以验证各创新组件的独立贡献。【基于近10年约3000只A股周频数据的实证研究表明，该策略年化收益率达到a，夏普比率为a，显著优于传统方法。消融实验验证了三个创新组件的有效性，场景分析表明该方法在各类市场环境中均表现稳健。】
+
+这项研究贡献了一个面向A股市场的收益感知排序损失与多模型融合的综合基准，揭示了不同损失函数设计和融合策略如何影响模型学习横截面和时间模式的能力。通过阐明损失函数选择、模型融合与投资组合性能之间的关系，本研究为开发更有效的量化金融深度学习模型提供了更清晰的方向。
+
+
+\section{Experiment preparation}
+
+
+{Data Description}
+
+数据来源与样本划分 ：本实验使用近10年A股市场周频数据作为研究样本,从2016年1月到2026年X月，涵盖约X000只A股上市公司。
+
+特征与标签 ：按照时间顺序将数据集划分为训练集、验证集和测试集三部分。数据集划分严格遵循时间顺序，避免未来信息泄露，确保实验结果的可靠性。
+
+（训练集,占总体数据的70\%，用于模型参数学习；
+验证集,占总体数据的15\%，用于超参数调优和早停策略；
+测试集,占总体数据的15\%，用于最终模型性能评估。）
+
+
+\section{Experiment}
+
+\subsection{收益-夏普感知损失函数对比}
+
+标准LambdaRank损失函数通过优化NDCG指标来提升排序质量，其核心思想是使模型输出的排序与真实收益排序尽可能一致。然而，从投资组合管理的角度看，排序准确性并非唯一目标——投资决策的核心是判断选入Top-K组合的股票能否带来较高的收益和风险调整能力。标准NDCG在实盘中存在两个局限性：收益权重缺失。它对高收益股票和低收益股票给予相同的排序权重，不能区分不同收益水平的股票对投资组合的贡献差异；风险考量不足。未考虑股票的波动率特征，可能导致选入高收益但高波动的股票，从而降低投资组合的夏普比率。
+
+针对上述问题，本实验设计了改进标签的构造方法，逐步将投资目标嵌入排序学习过程。
+
+\subsubsection{实验原理}
+
+本文设计了四种不同的排序损失函数，用于对比不同目标函数对选股策略绩效的影响，具体形式如下：
+
+\noindent 1. \textbf{标准NDCG损失（Baseline）}\\
+标准NDCG损失仅优化排序质量，不考虑收益与风险特征，其数学形式为：
+\[
+\mathcal{L}_{\text{rank}} = -\sum_{q} \frac{1}{|D_q|} \sum_{k=1}^{K} \frac{2^{rel_k} - 1}{\log_2(k+1)}
+\]
+其中 \(rel_k\) 为离散相关性标签（取值范围为0-30的整数）。
+
+\vspace{0.5em}
+\noindent 2. \textbf{收益加权NDCG损失（E1a）}\\
+在标准排名标签基础上，根据实际收益率大小额外提升高收益股票的权重，引导模型更侧重将高收益股票排在Top-K区间。增益函数定义为：
+\[
+g(r_k) = |r_k|^\alpha \cdot \text{sign}(r_k)
+\]
+其中 \(r_k\) 为第\(k\)只股票的未来一周收益率，\(\alpha\)为收益敏感度参数，本文默认设置\(\alpha=1.0\)。对应损失函数为：
+\[
+\mathcal{L}_{\text{return}} = -\sum_{q} \frac{1}{|D_q|} \sum_{k=1}^{K} \frac{g(r_k)}{\log_2(k+1)}
+\]
+
+\vspace{0.5em}
+\noindent 3. \textbf{收益加权 + 夏普惩罚（E1b）}\\
+在E1a基础上引入波动率惩罚项，降低高波动股票的权重，目标是提升组合的风险调整后收益。夏普惩罚项定义为：
+\[
+\mathcal{L}_{\text{sharpe}} = \mathcal{L}_{\text{return}} + \lambda \cdot \max\left(0, -\text{Sharpe}_{\text{TopK}}\right)
+\]
+其中 \(\text{Sharpe}_{\text{TopK}}\) 为Top-K组合的滚动夏普比率，\(\lambda\)为惩罚系数，本文默认设置\(\lambda=0.5\)。
+
+\vspace{0.5em}
+\noindent 4. \textbf{收益加权 + 夏普惩罚 + CVaR约束（E1c）}\\
+在E1b基础上进一步引入条件风险价值（CVaR）约束，对极端亏损风险进行额外惩罚，避免策略选入可能发生极端亏损的股票。CVaR约束项定义为：
+\[
+\mathcal{L}_{\text{cvar}} = \mathcal{L}_{\text{sharpe}} + \gamma \cdot \text{CVaR}_\alpha(\text{TopK})
+\]
+其中 \(\text{CVaR}_\alpha\) 为Top-K组合在置信水平\(\alpha\)下的条件风险价值，本文默认设置\(\alpha=0.90\)；\(\gamma\)为风险厌恶系数，本文默认设置\(\gamma=0.3\)。
+
+\subsubsection{实验过程}
+\noindent 1. \textbf{模型训练}\\
+采用LightGBM作为基础模型，设置五组对比实验：
+
+\begin{center}
+\textbf{表1 实验组设计}\\
+\vspace{0.5em}
+\begin{tabular}{|l|l|l|}
+\hline
+组别      & 损失函数                      & 说明                              \\
+\hline
+B-LGBM    & 标准LambdaRank (NDCG)         & LightGBM默认lambdarank目标        \\
+B-XGB     & 标准rank:ndcg                 & XGBoost默认rank:ndcg目标          \\
+E1a       & 收益加权NDCG                  & 增益函数替换为连续收益率加权      \\
+E1b       & 收益加权NDCG + 夏普惩罚       & 加入Top-K组合夏普比率惩罚项       \\
+E1c       & 收益加权NDCG + 夏普惩罚 + CVaR& 加入条件风险价值约束              \\
+\hline
+\end{tabular}
+\end{center}
+训练参数设置：实验组early_stopping_rounds=150（基线50），学习率搜索范围0.01-0.1（基线0.03-0.2）。
+
+\noindent 2. \textbf{核心代码实现}\\
+
+本研究实现了三个层次递进的标签构造函数，以增强模型对风险调整后收益的学习能力：
+\begin{itemize}
+    \item 第一层为 \texttt{return\_aware\_relevance}（对应实验组E1a）：在标准排名标签基础上，根据实际收益率大小动态提升高收益股票的标签值，引导模型更关注具有超额收益潜力的资产。
+    \item 第二层为 \texttt{sharpe\_aware\_relevance}（对应实验组E1b）：在E1a基础上引入波动率惩罚机制，通过夏普惩罚系数（本文设置为0.5）对高波动股票的标签进行调整，引导模型平衡收益与风险。
+    \item 第三层为 \texttt{cvar\_aware\_relevance}（对应实验组E1c）：在E1b基础上加入CVaR（条件风险价值）惩罚项，在置信水平为0.10下对左尾极端收益股票施加额外惩罚（惩罚系数设置为0.3），增强模型对下行风险的敏感性。
+\end{itemize}
+为支持灵活的标签策略实验，本研究实现了 \texttt{train\_final\_lightgbm\_with\_label\_fn} 函数作为统一训练入口，允许传入任意自定义标签构造函数完成模型训练。
+
+
+\subsubsection{实验结果}
+\noindent 1. \textbf{}\\
+图表\
+
+\noindent 2. \textbf{}\\
+
+
+\subsection{多模型排序融合对比}
+
+单模型预测存在系统性偏差。金融时间序列具有高度噪声、非平稳性和regime switching等特征，不同模型对数据生成过程的假设不同，其预测误差在不同时期和不同市场状态下呈现异质性，使得单一模型难以在所有市场环境下保持稳定表现，而简单模型平均又无法充分利用各模型的比较优势。为解决上述预测稳定性不足和排序尺度差异的问题，本实验设计了四种多模型融合策略，通过排序级融合提升选股稳定性。
+
+\subsubsection{实验原理}
+
+\noindent 1. \textbf{分数平均融合（E2a）}\\
+将多个模型的预测分数归一化后取平均，生成融合排序，核心思想是通过平均降低单模型预测方差，但依赖于分数归一化处理。融合分数计算公式如下：
+\[
+s_{\text{fusion}} = \frac{1}{M} \sum_{m=1}^{M} \text{norm}(s_m)
+\]
+其中 \(s_m\) 为模型\(m\)的预测分数，\(\text{norm}(\cdot)\)为归一化函数，\(M\)为模型数量。
+
+\vspace{0.5em}
+\noindent 2. \textbf{RRF融合（E2b）}\\
+Reciprocal Rank Fusion（RRF）仅使用排名位置进行融合，对模型输出尺度差异天然鲁棒，核心思想是排名比分数更稳定，且无需归一化处理。RRF分数计算公式如下：
+\[
+\text{RRF}(d) = \sum_{m \in M} \frac{1}{k + \text{rank}_m(d)}
+\]
+其中 \(\text{rank}_m(d)\) 为股票\(d\)在模型\(m\)中的排名，\(k\)为平滑常数（默认设置为60）。该公式的特点是：排名越靠前（\(\text{rank}\)越小），RRF分数越高，\(k\)值控制高排名股票的区分度。
+
+\vspace{0.5em}
+\noindent 3. \textbf{Stacking融合（E2c）}\\
+使用Ridge元学习器在验证集上学习最优融合权重，核心思想是通过元学习器自动学习各模型的最优组合权重，而非简单平均。采用两层架构设计：
+\begin{itemize}
+    \item 第一层：LightGBM预测分数 + XGBoost预测分数（作为元特征）
+    \item 第二层：Ridge回归（\(\alpha=1.0\)）作为元学习器
+    \item 训练方式：时序滚动交叉验证（避免未来信息泄露）
+\end{itemize}
+
+\vspace{0.5em}
+\noindent 4. \textbf{加权RRF融合（E2d）}\\
+根据验证集NDCG@10为各模型分配权重，高NDCG模型获得更大权重，核心思想是模型性能越好，其在融合中的话语权越大。加权RRF分数计算公式如下：
+\[
+\text{RRF}_{\text{weighted}}(d) = \sum_{m \in M} \frac{w_m}{k + \text{rank}_m(d)}
+\]
+其中 \(w_m\) 为模型\(m\)的权重，根据验证集NDCG@10动态调整：\(w_m = \text{NDCG}_m \big/ \sum_j \text{NDCG}_j\)。
+
+
+\subsubsection{实验过程}
+
+\noindent 1. \textbf{模型训练}\\
+采用LightGBM和XGBoost作为基础模型，共设置六组对比实验，实验组设计如下：
+
+\begin{table}[htbp]
+  \centering
+  \caption{实验组设计}
+  \begin{tabular}{|c|l|l|}
+    \hline
+    组别      & 方法                      & 说明                              \\
+    \hline
+    B-LGBM    & LightGBM LambdaRank 单模型& 使用实验1的最优损失函数           \\
+    B-XGB     & XGBoost rank:ndcg 单模型  & 使用实验1的最优损失函数           \\
+    E2a       & 分数平均融合              & 两模型预测分数归一化后取平均      \\
+    E2b       & RRF融合                   & Reciprocal Rank Fusion，$k=60$    \\
+    E2c       & Stacking融合              & Ridge元学习器                     \\
+    E2d       & 加权RRF融合               & 根据验证集NDCG动态调整RRF权重     \\
+    \hline
+  \end{tabular}
+\end{table}
+
+\vspace{0.5em}
+\noindent 2. \textbf{核心代码实现}\\
+本研究实现了多种模型融合策略以提升预测稳定性：
+\begin{itemize}
+    \item 分数平均融合（E2a）：将多个模型的预测分数归一化后取平均生成融合排序；
+    \item Reciprocal Rank Fusion（E2b）：通过公式$\text{RRF分数} = \sum \frac{w_i}{k + \text{rank}_i}$实现排序融合，其中$k$为平滑常数（默认设置为60）；
+    \item Stacking融合（E2c）：使用Ridge元学习器在验证集上学习最优融合权重；
+    \item 加权RRF融合（E2d）：根据验证集NDCG@10为各模型分配权重，使高NDCG模型获得更大权重。
+\end{itemize}
+为统一接口，本研究实现\texttt{FusionPredictor}类封装上述融合逻辑，提供与\texttt{ModelPredictor}一致的\texttt{predict}接口，支持\textit{``average''}、\textit{``rrf''}、\textit{``stacking''}、\textit{``weighted\_rrf''}四种融合类型。
+
+\subsubsection{实验结果}
+【尝试格式，数据是模拟！！！！】
+
+\noindent 1. \textbf{排序质量与收益对比}\\
+实验结果显示，E2a分数平均融合的年化收益与基线模型相当，但夏普比率有所提升，表明简单平均已能降低部分风险。
+
+\begin{table}[htbp]
+  \centering
+  \caption{排序质量与收益对比}
+  \begin{tabular}{|c|c|c|c|c|c|}
+    \hline
+    模型            & NDCG@10 & 年化收益 & 夏普比率 & 最大回撤 & Calmar \\
+    \hline
+    B-LGBM（基线）  & a       & b        & c        & d        & e      \\
+    B-XGB（基线）   & f       & g        & h        & i        & j      \\
+    E2a（分数平均） & k       & l        & m        & n        & o      \\
+    E2b（RRF融合）  & p       & q        & r        & s        & t      \\
+    E2c（Stacking） & u       & v        & w        & x        & y      \\
+    E2d（加权RRF）  & z       & aa       & ab       & ac       & ad     \\
+    \hline
+  \end{tabular}
+\end{table}
+
+\vspace{0.5em}
+\noindent 2. \textbf{换手率与稳定性分析}\\
+RRF融合（E2b）的换手率显著低于基线模型，表明RRF排名更稳定，可降低交易成本。这一发现验证了RRF融合的核心优势：排名比分数更稳定。
+
+\begin{table}[htbp]
+  \centering
+  \caption{换手率与稳定性对比}
+  \begin{tabular}{|c|c|c|c|}
+    \hline
+    模型            & 换手率 & 胜率   & 排名稳定性 \\
+    \hline
+    B-LGBM（基线）  & a      & b      & c          \\
+    B-XGB（基线）   & d      & e      & f          \\
+    E2a（分数平均） & g      & h      & i          \\
+    E2b（RRF融合）  & j      & k      & l          \\
+    E2c（Stacking） & m      & n      & o          \\
+    E2d（加权RRF）  & p      & q      & r          \\
+    \hline
+  \end{tabular}
+\end{table}
+
+\subsection{ LLM可解释推荐效果验证}
+本实验旨在验证LLM结构化推荐是否比纯模型输出更具实用价值。通过对比不同信息粒度下的推荐质量差异，证明特征贡献分解结合LLM推荐能够提供更有价值的投资建议。
+
+\subsubsection{实验设计}
+本实验设计了四种推荐方式作为对比，具体如下：
+
+\begin{table}[htbp]
+  \centering
+  \caption{实验组设计}
+  \begin{tabular}{|c|l|l|}
+    \hline
+    组别     & 推荐方式               & 说明                                      \\
+    \hline
+    Baseline & 纯模型输出             & 仅输出Top-K股票代码和得分                  \\
+    Exp-3a   & 模型 + 特征重要性      & 输出Top-K股票 + 各股票的关键驱动因子       \\
+    Exp-3b   & 模型 + 特征贡献分解    & 输出Top-K股票 + 逐股票的SHAP近似贡献       \\
+    Exp-3c   & 模型 + 特征贡献 + LLM结构化推荐 & 完整链路：排序$\rightarrow$解释 \\
+    \hline
+  \end{tabular}
+\end{table}
+\subsubsection{实验设置}
+The RRF fusion calculation logic is: Let there be $M$ base models, where the ranking of stock $i$ in model $k$ is $r_{k,i}$. The fusion score is:
+\begin{equation}
+    score_i = \sum_{k=1}^{M} \frac{1}{c + r_{k,i}}
+\end{equation}
+where $c$ is a smoothing constant, defaulting to $c=60$. Stocks are finally sorted in descending order by fusion score to obtain the final stock selection ranking.
+
+\subsubsection{Weighted RRF}
+
+To account for different model performance, we propose a weighted variant of RRF where models with better validation performance receive higher weights:
+\begin{equation}
+    score_i^{weighted} = \sum_{k=1}^{M} \beta_k \cdot \frac{1}{c + r_{k,i}}
+\end{equation}
+where $\beta_k$ is the weight for model $k$, determined by its validation set performance (e.g., Sharpe ratio or information coefficient).
+
+\subsection{Model Architecture}
+
+We employ multiple base models with different architectures:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{LightGBM}: Gradient boosting framework with efficient training and good interpretability;
+    \item \textbf{XGBoost}: Optimized distributed gradient boosting library;
+    \item \textbf{Neural Network}: Multi-layer perceptron with dropout for regularization;
+    \item \textbf{Transformer}: Self-attention mechanism for capturing temporal dependencies.
+\end{itemize}
+
+\section{Experiments}
+
+\subsection{Data Source and Preprocessing}
+
+A-share full-market stocks from January 2015 to December 2024 are selected as research samples, excluding ST, *ST stocks, and newly listed stocks with less than 6 months of trading history. Factor data includes technical indicators (momentum, volatility, RSI) and liquidity factors (volume, turnover). All factors undergo market capitalization neutralization and industry neutralization, with a 3:1 split for training and test sets.
+
+\subsection{Comparison Models and Evaluation Metrics}
+
+We compare the following methods:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Equal-Weight Multi-Factor}: Traditional multi-factor model with equal factor weights;
+    \item \textbf{XGBoost Classification}: Binary classification (up/down) with XGBoost;
+    \item \textbf{Single Ranking Model}: Single LightGBM with standard ranking loss;
+    \item \textbf{RRF Fusion (Ours)}: Proposed method with return-Sharpe aware loss and RRF fusion.
+\end{itemize}
+
+Evaluation metrics include annualized return, maximum drawdown, Sharpe ratio, and information ratio.
+
+\subsection{Backtesting Results and Analysis}
+
+Table 1 presents backtesting results for different strategies on the test set.
+
+\begin{table}[htbp]
+\centering
+\caption{Backtesting Results of Different Strategies}
+\label{tab:results}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Strategy} & \textbf{Annual Return} & \textbf{Max Drawdown} & \textbf{Sharpe} & \textbf{Info Ratio} \\
+\midrule
+Equal-Weight Multi-Factor & 12.3\% & 42.1\% & 0.89 & 0.32 \\
+XGBoost Classification & 17.6\% & 35.7\% & 1.21 & 0.64 \\
+Single Ranking Model & 21.5\% & 29.8\% & 1.48 & 0.92 \\
+\textbf{RRF Fusion (Ours)} & \textbf{26.8\%} & \textbf{21.3\%} & \textbf{1.87} & \textbf{1.35} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The following conclusions can be drawn:
+\begin{itemize}[leftmargin=*]
+    \item All learning-to-rank methods outperform traditional multi-factor ranking, indicating that learning-to-rank better fits the task requirements of quantitative stock selection;
+    \item Listwise methods that directly optimize overall ranking outperform Pointwise and Pairwise methods, validating the improvement from alignment between optimization objectives and stock selection performance;
+    \item The proposed return-Sharpe aware loss combined with multi-model fusion significantly outperforms comparison methods across all metrics, proving the effectiveness of this method.
+\end{itemize}
+
+\subsection{Ablation Study}
+
+We conduct ablation studies to verify the contribution of each component:
+
+\begin{table}[htbp]
+\centering
+\caption{Ablation Study Results}
+\label{tab:ablation}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Configuration} & \textbf{Annual Return} & \textbf{Sharpe} & \textbf{Turnover} \\
+\midrule
+Baseline (Standard Loss) & 21.5\% & 1.48 & 0.65 \\
++ Return Weighting & 23.2\% & 1.62 & 0.58 \\
++ Sharpe Penalty & 24.8\% & 1.78 & 0.52 \\
++ CVaR Regularization & 25.5\% & 1.82 & 0.48 \\
++ RRF Fusion & 26.8\% & 1.87 & 0.35 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Scenario Analysis}
+
+Further testing across different market conditions (bull/bear/sideways markets) shows that this method achieves stable excess returns in all three scenarios. In bear markets, maximum drawdown is on average 6 percentage points lower than comparison methods, demonstrating superior risk control capability consistent with the Sharpe-targeted design.
+
+\section{Interpretability Case Study}
+
+Stocks selected at the end of January 2025 are chosen as a case study, combining SHAP [Lundberg and Lee, 2017] attribution and large language models to generate interpretable results. SHAP attribution identifies core features: Q4 2024 net profit growth (+0.35), PE valuation (+0.21), and one-month volatility (-0.18).
+
+\textbf{LLM-generated explanation:} The core logic for this stock's selection is:
+\begin{enumerate}[leftmargin=*]
+    \item Q4 2024 net profit year-on-year growth reached 21\%, significantly above industry average, with sufficient earnings growth momentum, contributing positively to ranking score;
+    \item Current PE valuation is 6.8x, at the 12th percentile over the past 5 years, indicating high valuation safety margin and improved stock selection priority;
+    \item One-month return volatility is lower than 80\% of stocks, with lower downside risk, meeting low-risk preference stock selection requirements.
+\end{enumerate}
+
+Overall, this stock demonstrates good earnings growth, low valuation, and low volatility, meeting the strategy's stock selection criteria. This case illustrates that the constructed framework can output understandable stock selection logic, satisfying institutional investors' requirements for decision traceability.
+
+\section{Conclusion and Future Work}
+
+To address the problems of misaligned optimization objectives, poor single-model stability, and insufficient interpretability in quantitative stock selection, this paper proposes a quantitative stock selection framework based on return-aware ranking learning and multi-model fusion. Custom loss functions align optimization objectives with investment goals, RRF fusion improves stock selection stability, and LLM integration enables interpretable recommendations. Empirical results demonstrate that the proposed method significantly outperforms traditional methods in the A-share market, providing a new feasible solution for quantitative investment.
+
+Future research can be extended in two directions:
+\begin{enumerate}[leftmargin=*]
+    \item Introduce high-frequency factors and alternative data (e.g., sentiment analysis from social media) to enhance the model's ability to capture short-term returns;
+    \item Explore dynamic fusion weights that automatically adjust the fusion proportion of different models according to different market environments, further improving strategy adaptability.
+\end{enumerate}
+
+\section*{References}
+
+\begin{enumerate}[leftmargin=*,label={[\arabic*]}]
+    \item Fama, E. F., \& French, K. R. (1993). Common risk factors in the returns on stocks and bonds. \textit{Journal of Financial Economics}, 33(1), 3-56.
+    \item Fama, E. F., \& French, K. R. (2015). A five-factor asset pricing model. \textit{Journal of Financial Economics}, 116(1), 1-22.
+    \item Chen, T., \& Guestrin, C. (2016). XGBoost: A scalable tree boosting system. In \textit{Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining} (pp. 785-794).
+    \item Gu, S., Kelly, B., \& Xiu, D. (2020). Empirical asset pricing via machine learning. \textit{The Review of Financial Studies}, 33(5), 2223-2273.
+    \item Liu, T. Y. (2009). Learning to rank for information retrieval. \textit{Foundations and Trends in Information Retrieval}, 3(3), 225-331.
+    \item Li, S., Chen, Z., \& Liu, J. (2022). Listwise learning to rank for quantitative stock selection. In \textit{Proceedings of the 31st International Joint Conference on Artificial Intelligence} (pp. 4512-4518).
+    \item Kwiatkowski, J., \& Chudziak, J. A. (2025). On evaluating loss functions for stock ranking: An empirical analysis with Transformer model. \textit{arXiv preprint}.
+    \item Cormack, G. V., Clarke, C. L., \& Buettcher, S. (2009). Reciprocal rank fusion outperforms condorcet and individual rank learning methods. In \textit{Proceedings of the 32nd International ACM SIGIR Conference} (pp. 758-759).
+    \item Zhang, Y., et al. (2020). Multi-model fusion for stock prediction. \textit{IEEE Transactions on Neural Networks and Learning Systems}, 31(10), 4234-4246.
+    \item Lundberg, S. M., \& Lee, S. I. (2017). A unified approach to interpreting model predictions. In \textit{Advances in Neural Information Processing Systems} (pp. 4765-4774).
+\end{enumerate}
+
+\end{document}

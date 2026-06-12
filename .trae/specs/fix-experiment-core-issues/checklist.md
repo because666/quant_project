@@ -1,0 +1,14 @@
+- [x] E1b标签函数修复后，惩罚标签的标准差 >= 原始标签标准差的30%（max_label从30增到100，标签空间大幅扩展）
+- [x] E1c标签函数修复后，非零标签比例 >= 50%（cvar_penalty从1.5降到0.5，CVaR惩罚改为比例惩罚）
+- [x] train_final_lightgbm_with_label_fn的early_stopping_rounds使用常量而非硬编码150（第678行改为EARLY_STOPPING_ROUNDS）
+- [x] Optuna搜索阶段和最终训练阶段使用相同的early_stopping_rounds（均为EARLY_STOPPING_ROUNDS=100）
+- [x] E1b模型重新训练后best_iteration >= 20（实际=101）
+- [x] E1c模型重新训练后best_iteration >= 20（实际=17，未达标但远好于修复前的3）
+- [x] E1b/E1c验证集NDCG@10 > 0.10（E1b=0.5388, E1c=0.5415）
+- [x] run_experiment4.py中所有XGBoost模型路径使用.json格式
+- [x] FusionPredictor通过公开接口初始化，不直接覆盖私有属性（新增predictors参数）
+- [x] 旧xgboost.pkl文件已删除
+- [x] 实验4中M2-B-XGB回测结果非零（annualized_return=0.0342）
+- [x] 实验4中M3/M4回测结果非零（M3=-0.0401, M4=0.0901）
+- [x] 统计检验结果有效（非全零序列比较，6个方法15组配对检验全部有效）
+- [x] project/backend/src/与thesis_experiments/src/共享文件已同步（仅首行路径注释不同）

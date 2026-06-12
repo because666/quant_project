@@ -1,130 +1,130 @@
 {
   "B-LGBM": {
     "5": {
-      "annualized_return": 0.2732167128512075,
-      "sharpe_ratio": 0.8964526557557634,
-      "max_drawdown": 0.2523269959598132,
-      "turnover_rate": 1.3221420436896056
+      "annualized_return": 0.03187840931571495,
+      "sharpe_ratio": 0.007387086119356646,
+      "max_drawdown": 0.3166970496058542,
+      "turnover_rate": 1.5149875535205117
     },
     "10": {
-      "annualized_return": 0.22229553018032755,
-      "sharpe_ratio": 0.8784186920680466,
-      "max_drawdown": 0.1859674369052864,
-      "turnover_rate": 1.1628026754511562
+      "annualized_return": 0.0498075601705934,
+      "sharpe_ratio": 0.08924221363074826,
+      "max_drawdown": 0.30746961060571987,
+      "turnover_rate": 1.3412246587650307
     },
     "20": {
-      "annualized_return": 0.1654700060946972,
-      "sharpe_ratio": 0.7107694834875372,
-      "max_drawdown": 0.16369581689019108,
-      "turnover_rate": 1.0295217273112716
+      "annualized_return": 0.09258716914259213,
+      "sharpe_ratio": 0.2872835471433293,
+      "max_drawdown": 0.264084835276595,
+      "turnover_rate": 1.2032764493675547
     },
     "30": {
-      "annualized_return": 0.15824914284801594,
-      "sharpe_ratio": 0.6901756553778087,
-      "max_drawdown": 0.12876578620816603,
-      "turnover_rate": 0.9554727001572856
+      "annualized_return": 0.07911186424990246,
+      "sharpe_ratio": 0.22592203886504794,
+      "max_drawdown": 0.28256788554202694,
+      "turnover_rate": 1.1183861055003836
     },
     "50": {
-      "annualized_return": 0.12813948205053327,
-      "sharpe_ratio": 0.5318732125547955,
-      "max_drawdown": 0.14545909594312112,
-      "turnover_rate": 0.8752446483472329
+      "annualized_return": 0.10920562621302987,
+      "sharpe_ratio": 0.34490810193585014,
+      "max_drawdown": 0.2631409308112159,
+      "turnover_rate": 1.1030015335957994
     }
   },
   "B-XGB": {
     "5": {
-      "annualized_return": 0.09013648827994603,
-      "sharpe_ratio": 0.33538644064924505,
-      "max_drawdown": 0.15998664749083213,
-      "turnover_rate": 0.8591694838557271
+      "annualized_return": -0.0838684717998942,
+      "sharpe_ratio": -0.4735171171874358,
+      "max_drawdown": 0.352158335816541,
+      "turnover_rate": 1.6787935096226811
     },
     "10": {
-      "annualized_return": 0.10708705925160311,
-      "sharpe_ratio": 0.45372717781013977,
-      "max_drawdown": 0.12885138078970992,
-      "turnover_rate": 0.7272740863644691
+      "annualized_return": -0.07461458249119934,
+      "sharpe_ratio": -0.46626042204080825,
+      "max_drawdown": 0.3385717400836189,
+      "turnover_rate": 1.5996693079582422
     },
     "20": {
-      "annualized_return": 0.13699399026042136,
-      "sharpe_ratio": 0.6101397640013944,
-      "max_drawdown": 0.12185907535874974,
-      "turnover_rate": 0.6802150667807184
+      "annualized_return": 0.03419741313008484,
+      "sharpe_ratio": 0.018445641860838195,
+      "max_drawdown": 0.28153892979004536,
+      "turnover_rate": 1.4983921524157067
     },
     "30": {
-      "annualized_return": 0.1295266381489233,
-      "sharpe_ratio": 0.5902305595129391,
-      "max_drawdown": 0.12857142814200284,
-      "turnover_rate": 0.6408558221249812
+      "annualized_return": 0.05693186612949863,
+      "sharpe_ratio": 0.1170281627314502,
+      "max_drawdown": 0.25923264899399434,
+      "turnover_rate": 1.4015357199994025
     },
     "50": {
-      "annualized_return": 0.08886332283937648,
-      "sharpe_ratio": 0.354532372609246,
-      "max_drawdown": 0.14800339295001863,
-      "turnover_rate": 0.5734034264684926
+      "annualized_return": 0.04836160474229456,
+      "sharpe_ratio": 0.083145559174418,
+      "max_drawdown": 0.2725993108399284,
+      "turnover_rate": 1.2675997831387888
     }
   },
   "E1a-LGBM": {
     "5": {
-      "annualized_return": 0.1350981517940899,
-      "sharpe_ratio": 0.5341550179103317,
-      "max_drawdown": 0.1328198233069643,
-      "turnover_rate": 0.9407705726817874
+      "annualized_return": -0.06870400700270352,
+      "sharpe_ratio": -0.4871930855571772,
+      "max_drawdown": 0.3975394900766027,
+      "turnover_rate": 1.140983471491619
     },
     "10": {
-      "annualized_return": 0.1343646604102533,
-      "sharpe_ratio": 0.5682898830483349,
-      "max_drawdown": 0.17112223918611125,
-      "turnover_rate": 0.8705082907712248
+      "annualized_return": -0.11265531377934113,
+      "sharpe_ratio": -0.7400315828645242,
+      "max_drawdown": 0.38078615683478556,
+      "turnover_rate": 0.9495044614941262
     },
     "20": {
-      "annualized_return": 0.12599545183099292,
-      "sharpe_ratio": 0.5758462595637606,
-      "max_drawdown": 0.15932716824709514,
-      "turnover_rate": 0.7872263079012809
+      "annualized_return": -0.03240803486201316,
+      "sharpe_ratio": -0.29991290243781465,
+      "max_drawdown": 0.326835550904927,
+      "turnover_rate": 0.7127009331912428
     },
     "30": {
-      "annualized_return": 0.12663276519758226,
-      "sharpe_ratio": 0.5790523019018262,
-      "max_drawdown": 0.1560105820510026,
-      "turnover_rate": 0.7507507633822645
+      "annualized_return": -0.04500238805323409,
+      "sharpe_ratio": -0.38106110632900164,
+      "max_drawdown": 0.3201950607026134,
+      "turnover_rate": 0.627947123305613
     },
     "50": {
-      "annualized_return": 0.09334758198970139,
-      "sharpe_ratio": 0.3849528043734032,
-      "max_drawdown": 0.13578910994269944,
-      "turnover_rate": 0.7073115487305826
+      "annualized_return": 0.010283153570373571,
+      "sharpe_ratio": -0.10326170757184241,
+      "max_drawdown": 0.25159548690227906,
+      "turnover_rate": 0.6206048632166411
     }
   },
   "E1b-LGBM": {
     "5": {
-      "annualized_return": 0.06926120487690768,
-      "sharpe_ratio": 0.1954299833568352,
-      "max_drawdown": 0.29987246290294167,
-      "turnover_rate": 1.5338958403381835
+      "annualized_return": -0.03730524688281278,
+      "sharpe_ratio": -0.33838464505851074,
+      "max_drawdown": 0.3346469442143275,
+      "turnover_rate": 1.2484419426522946
     },
     "10": {
-      "annualized_return": 0.18909979952205602,
-      "sharpe_ratio": 0.7432678020290778,
-      "max_drawdown": 0.1762276952035341,
-      "turnover_rate": 1.4072605075721432
+      "annualized_return": -0.03445923960357922,
+      "sharpe_ratio": -0.3495929173424411,
+      "max_drawdown": 0.2866891028383779,
+      "turnover_rate": 1.125651837063441
     },
     "20": {
-      "annualized_return": 0.1387474059549343,
-      "sharpe_ratio": 0.5661408721693649,
-      "max_drawdown": 0.1307888252689623,
-      "turnover_rate": 1.2564542388402453
+      "annualized_return": -0.03654816062125088,
+      "sharpe_ratio": -0.3706089577116631,
+      "max_drawdown": 0.2784691991338294,
+      "turnover_rate": 1.0398843108830478
     },
     "30": {
-      "annualized_return": 0.09729801893982848,
-      "sharpe_ratio": 0.37383557529524675,
-      "max_drawdown": 0.15371296411591862,
-      "turnover_rate": 1.2040145043880837
+      "annualized_return": 0.008888853891618087,
+      "sharpe_ratio": -0.11441010300754398,
+      "max_drawdown": 0.24677984428584576,
+      "turnover_rate": 0.9848247810805827
     },
     "50": {
-      "annualized_return": 0.03803755745631521,
-      "sharpe_ratio": 0.046015974201371525,
-      "max_drawdown": 0.2068808242133161,
-      "turnover_rate": 1.1095822748785118
+      "annualized_return": 0.027762347872730908,
+      "sharpe_ratio": -0.012435811344993388,
+      "max_drawdown": 0.22694900756488712,
+      "turnover_rate": 0.903328441338279
     }
   }
 }

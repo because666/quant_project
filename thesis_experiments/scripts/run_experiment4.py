@@ -106,7 +106,7 @@ def get_method_configurations() -> dict[str, dict[str, Any]]:
             "label": "M2: XGBoost基线",
             "predictor_type": "single",
             "model_type": "xgboost",
-            "model_path": MODELS_DIR / "xgboost.pkl",
+            "model_path": MODELS_DIR / "xgboost.json",
             "vol_penalty": 0.5,
         },
         "M3-E1b-RRF": {
@@ -116,7 +116,7 @@ def get_method_configurations() -> dict[str, dict[str, Any]]:
             "model_types": ["e1b_lightgbm", "xgboost"],
             "model_paths": [
                 MODELS_DIR / "e1b_lightgbm.pkl",
-                MODELS_DIR / "xgboost.pkl",
+                MODELS_DIR / "xgboost.json",
             ],
             "vol_penalty": 0.7,
             "k": 60,
@@ -128,7 +128,7 @@ def get_method_configurations() -> dict[str, dict[str, Any]]:
             "model_types": ["e1a_lightgbm", "xgboost"],
             "model_paths": [
                 MODELS_DIR / "e1a_lightgbm.pkl",
-                MODELS_DIR / "xgboost.pkl",
+                MODELS_DIR / "xgboost.json",
             ],
             "vol_penalty": 0.5,
         },
@@ -165,9 +165,8 @@ def create_predictor(config: dict[str, Any]) -> ModelPredictor | FusionPredictor
         fp = FusionPredictor(
             fusion_type=config["fusion_strategy"],
             model_types=["lightgbm", "xgboost"],
+            predictors=sub_predictors,
         )
-        fp._predictors = sub_predictors
-        fp._factor_cols = sub_predictors[0]._factor_cols
         return fp
     else:
         raise ValueError(f"未知的预测器类型: {config['predictor_type']}")

@@ -163,11 +163,11 @@ def generate_report(
     # B-XGB
     xgb_m = model_results.get("xgboost", {}).get("metrics", {})
     lines.append("| B-XGB | {:.2f} | {:.3f} | {:.2f} | {:.3f} | {:.3f} |".format(
-        xgb_m.get("annualized_return", 0) * 100,
-        xgb_m.get("sharpe_ratio", 0),
-        xgb_m.get("max_drawdown", 0) * 100,
-        xgb_m.get("calmar_ratio", 0),
-        xgb_m.get("sortino_ratio", 0),
+        (xgb_m.get("annualized_return") or 0) * 100,
+        xgb_m.get("sharpe_ratio") or 0,
+        (xgb_m.get("max_drawdown") or 0) * 100,
+        xgb_m.get("calmar_ratio") or 0,
+        xgb_m.get("sortino_ratio") or 0,
     ))
 
     # B-EW

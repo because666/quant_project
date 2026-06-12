@@ -1,4 +1,4 @@
-﻿# [共享文件] 本文件同时存在于 project/backend/src/ 和 thesis_experiments/src/，修改时请同步更新两处
+# [共享文件] 本文件同时存在于 project/backend/src/ 和 thesis_experiments/src/，修改时请同步更新两处
 """
 测试集上评估 LightGBM / XGBoost 排序效果：NDCG、MAP、按截面 NDCG@10 曲线、特征重要性对比。
 
@@ -29,7 +29,7 @@ import xgboost as xgb
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 MODELS_DIR = PROJECT_ROOT / "models"
 DEFAULT_LGB_PATH = MODELS_DIR / "lightgbm.pkl"
-DEFAULT_XGB_PATH = MODELS_DIR / "xgboost.pkl"
+DEFAULT_XGB_PATH = MODELS_DIR / "xgboost.json"
 METRICS_JSON = MODELS_DIR / "evaluation_metrics.json"
 NDCG_CURVE_PNG = MODELS_DIR / "ndcg_curve.png"
 NDCG_CURVE_JSON = MODELS_DIR / "ndcg_curve.json"

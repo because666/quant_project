@@ -1,4 +1,4 @@
-﻿# [共享文件] 本文件同时存在于 project/backend/src/ 和 thesis_experiments/src/，修改时请同步更新两处
+# [共享文件] 本文件同时存在于 project/backend/src/ 和 thesis_experiments/src/，修改时请同步更新两处
 """
 LightGBM LambdaRank 训练与 Optuna 超参搜索。
 
@@ -35,8 +35,9 @@ DEFAULT_TUNE_LOG_PATH = MODELS_DIR / "lightgbm_optuna_trials.jsonl"
 
 RANDOM_STATE = 42
 N_OPTUNA_TRIALS = 20
-EARLY_STOPPING_ROUNDS = 50
+EARLY_STOPPING_ROUNDS = 100
 MAX_BOOST_ROUND = 2000
+_EXCLUDE_COLS = {"group_id", "group_size"}
 
 
 def _setup_file_logger(log_path: Path) -> logging.Logger:
@@ -84,6 +85,7 @@ def return_aware_relevance(
     group_sizes: list[int],
     max_label: int = 30,
     alpha: float = 1.0,
+    **_kwargs: Any,
 ) -> np.ndarray:
     """
     E1a：收益加权 NDCG 标签。
@@ -96,6 +98,7 @@ def return_aware_relevance(
         group_sizes: 每个截面（query）的样本数列表
         max_label: 标签上界，默认 30
         alpha: 收益加权的幂次，控制奖励强度，默认 1.0
+        **_kwargs: 忽略的额外参数（如volatility，由build_datasets_with_label_fn自动传递）
 
     返回:
         整数 relevance 标签数组，形状 (N,)，值域 [0, max_label]
@@ -109,8 +112,8 @@ def return_aware_relevance(
             continue
         sl = slice(pos, pos + gsz)
         seg = y[sl]
-        abs_seg = np.abs(seg)
-        bonus = np.power(abs_seg, alpha)
+        pos_seg = np.maximum(seg, 0.0)
+        bonus = np.power(pos_seg, alpha)
         bonus_max = bonus.max()
         if bonus_max > 0:
             bonus = bonus / bonus_max * max_label * 0.3
@@ -127,7 +130,7 @@ def sharpe_aware_relevance(
     max_label: int = 30,
     alpha: float = 1.0,
     volatility: np.ndarray | None = None,
-    sharpe_penalty: float = 0.5,
+    sharpe_penalty: float = 0.3,
 ) -> np.ndarray:
     """
     E1b：收益加权 + 夏普惩罚标签。
@@ -142,10 +145,10 @@ def sharpe_aware_relevance(
         alpha: 收益加权的幂次，控制奖励强度，默认 1.0
         volatility: 波动率数组（如 volatility_12w），形状 (N,)，
                     为 None 时退化为 E1a
-        sharpe_penalty: 夏普惩罚系数，默认 0.5（原0.1过小，整数截断后几乎无差异）
+        sharpe_penalty: 夏普惩罚系数，默认 0.3
 
     返回:
-        整数 relevance 标签数组，形状 (N,)，值域 [0, max_label]
+        浮点 relevance 标签数组，形状 (N,)，值域 [0, max_label]
     """
     e1a_labels = return_aware_relevance(y, group_sizes, max_label=max_label, alpha=alpha).astype(np.float64)
     if volatility is None:
@@ -174,8 +177,8 @@ def cvar_aware_relevance(
     max_label: int = 30,
     alpha: float = 1.0,
     volatility: np.ndarray | None = None,
-    sharpe_penalty: float = 0.5,
-    cvar_penalty: float = 1.5,
+    sharpe_penalty: float = 0.3,
+    cvar_penalty: float = 0.5,
     cvar_alpha: float = 0.20,
 ) -> np.ndarray:
     """
@@ -191,12 +194,12 @@ def cvar_aware_relevance(
         alpha: 收益加权的幂次，默认 1.0
         volatility: 波动率数组（如 volatility_12w），形状 (N,)，
                     为 None 时退化为 E1a
-        sharpe_penalty: 夏普惩罚系数，默认 0.5
-        cvar_penalty: CVaR 惩罚系数，默认 1.5（0.3过弱导致E1c与E1b无差异）
-        cvar_alpha: CVaR 分位数阈值，默认 0.20（即 20% 分位数，0.10覆盖太少）
+        sharpe_penalty: 夏普惩罚系数，默认 0.3
+        cvar_penalty: CVaR 惩罚系数，默认 0.5
+        cvar_alpha: CVaR 分位数阈值，默认 0.20（即 20% 分位数）
 
     返回:
-        整数 relevance 标签数组，形状 (N,)，值域 [0, max_label]
+        浮点 relevance 标签数组，形状 (N,)，值域 [0, max_label]
     """
     e1b_labels = sharpe_aware_relevance(
         y, group_sizes,
@@ -214,8 +217,8 @@ def cvar_aware_relevance(
         threshold = np.quantile(seg, cvar_alpha)
         below_mask = seg < threshold
         if np.any(below_mask) and abs(threshold) > 1e-12:
-            distance = np.maximum((threshold - seg) / abs(threshold), 0.0)
-            cvar_pen = cvar_penalty * distance * max_label
+            distance = np.clip((threshold - seg) / abs(threshold), 0.0, 3.0)
+            cvar_pen = cvar_penalty * distance * out[sl]
             out[sl] = out[sl] - cvar_pen
         pos += gsz
     return np.clip(out, 0, max_label).astype(np.int32)
@@ -227,6 +230,7 @@ def get_base_params() -> dict[str, Any]:
         "objective": "lambdarank",
         "metric": "ndcg",
         "ndcg_eval_at": [5, 10, 20],
+        "label_gain": list(range(31)),
         "boosting_type": "gbdt",
         "num_leaves": 31,
         "learning_rate": 0.05,
@@ -264,7 +268,9 @@ def build_datasets(
             f"val {sum(g_va)} vs {len(X_va)}"
         )
 
-    feat_names = list(X_tr.columns)
+    feat_names = [c for c in X_tr.columns if c not in _EXCLUDE_COLS]
+    X_tr = X_tr[feat_names]
+    X_va = X_va[feat_names]
     X_tr_m = np.ascontiguousarray(X_tr.to_numpy(dtype=np.float32, copy=True))
     X_va_m = np.ascontiguousarray(X_va.to_numpy(dtype=np.float32, copy=True))
 
@@ -324,7 +330,7 @@ def build_datasets_with_label_fn(
             f"val {sum(g_va)} vs {len(X_va)}"
         )
 
-    feat_names = list(X_tr.columns)
+    feat_names = [c for c in X_tr.columns if c not in _EXCLUDE_COLS]
 
     kw: dict[str, Any] = dict(label_fn_kwargs) if label_fn_kwargs else {}
     if "volatility" not in kw and "volatility_12w" in X_tr.columns:
@@ -341,6 +347,8 @@ def build_datasets_with_label_fn(
     y_tr_rel = label_fn(y_tr, g_tr, **kw)
     y_va_rel = label_fn(y_va, g_va, **kw_va)
 
+    X_tr = X_tr[feat_names]
+    X_va = X_va[feat_names]
     X_tr_m = np.ascontiguousarray(X_tr.to_numpy(dtype=np.float32, copy=True))
     X_va_m = np.ascontiguousarray(X_va.to_numpy(dtype=np.float32, copy=True))
 
@@ -423,7 +431,7 @@ def tune_lightgbm(
         params = {
             **base,
             "num_leaves": trial.suggest_int("num_leaves", 10, 63),
-            "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.1, log=True),
+            "learning_rate": trial.suggest_float("learning_rate", 0.03, 0.1, log=True),
             "min_child_samples": trial.suggest_int("min_child_samples", 20, 100),
             "feature_fraction": trial.suggest_float("feature_fraction", 0.5, 1.0),
             "lambda_l1": trial.suggest_float("lambda_l1", 0.0, 2.0),
@@ -665,12 +673,12 @@ def train_final_lightgbm_with_label_fn(
         final_params = base
         logger.info("跳过调优，使用基础参数")
 
-    logger.info("使用最终参数训练并早停（early_stopping_rounds=%d）", 150)
+    logger.info("使用最终参数训练并早停（early_stopping_rounds=%d）", EARLY_STOPPING_ROUNDS)
     bst = train_booster(
         final_params,
         train_set,
         valid_set,
-        early_stopping_rounds=150,
+        early_stopping_rounds=EARLY_STOPPING_ROUNDS,
         log_evaluation_period=50,
     )
 
@@ -729,8 +737,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Train LightGBM LambdaRank with optional Optuna tuning.")
     parser.add_argument("--trials", type=int, default=N_OPTUNA_TRIALS, help="Optuna trials (default 20)")
     parser.add_argument("--no-tune", action="store_true", help="Skip hyperparameter search, use base params only")
+    parser.add_argument("--data-dir", type=str, default=None, help="数据目录（默认data/）")
     args = parser.parse_args()
-    train_final_lightgbm(tune=not args.no_tune, n_trials=max(1, args.trials))
+    data_dir = Path(args.data_dir) if args.data_dir else DATA_OUT_DIR
+    train_final_lightgbm(tune=not args.no_tune, n_trials=max(1, args.trials), data_dir=data_dir)
 
 
 if __name__ == "__main__":

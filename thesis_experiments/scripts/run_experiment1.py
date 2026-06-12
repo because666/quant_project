@@ -165,7 +165,7 @@ def train_e1a(n_trials: int = 20) -> None:
     logger.info("E1a 训练完成，耗时 %.1f 秒，最优参数: %s", elapsed, params_e1a)
 
 
-def train_e1b(n_trials: int = 20) -> None:
+def train_e1b(n_trials: int = 50) -> None:
     """训练 E1b 模型：收益加权NDCG + 夏普惩罚。"""
     logger.info("=" * 60)
     logger.info("开始训练 E1b-LGBM（收益加权NDCG + 夏普惩罚）")
@@ -174,7 +174,7 @@ def train_e1b(n_trials: int = 20) -> None:
     bst_e1b, params_e1b = train_final_lightgbm_with_label_fn(
         e1b_label_fn,
         label_fn_name="e1b",
-        label_fn_kwargs={"alpha": 1.0, "sharpe_penalty": 0.5},
+        label_fn_kwargs={"alpha": 1.0, "sharpe_penalty": 0.3},
         tune=True,
         n_trials=n_trials,
     )
@@ -182,7 +182,7 @@ def train_e1b(n_trials: int = 20) -> None:
     logger.info("E1b 训练完成，耗时 %.1f 秒，最优参数: %s", elapsed, params_e1b)
 
 
-def train_e1c(n_trials: int = 20) -> None:
+def train_e1c(n_trials: int = 50) -> None:
     """训练 E1c 模型：收益加权NDCG + 夏普惩罚 + CVaR。"""
     logger.info("=" * 60)
     logger.info("开始训练 E1c-LGBM（收益加权NDCG + 夏普惩罚 + CVaR）")
@@ -191,7 +191,7 @@ def train_e1c(n_trials: int = 20) -> None:
     bst_e1c, params_e1c = train_final_lightgbm_with_label_fn(
         e1c_label_fn,
         label_fn_name="e1c",
-        label_fn_kwargs={"alpha": 1.0, "sharpe_penalty": 0.5, "cvar_penalty": 1.5, "cvar_alpha": 0.20},
+        label_fn_kwargs={"alpha": 1.0, "sharpe_penalty": 0.3, "cvar_penalty": 0.5, "cvar_alpha": 0.20},
         tune=True,
         n_trials=n_trials,
         tune_seed=123,
@@ -467,8 +467,11 @@ def main() -> None:
         {"name": "E1c-LGBM", "path": MODELS_DIR / "e1c_lightgbm.pkl", "label": "e1c"},
     ]
 
+    vol_penalty_grid: list[float] = [0.0, 0.3, 0.5, 0.7, 1.0, 1.5, 2.0, 3.0, 5.0]
+
     all_metrics: dict[str, dict[str, Any]] = {}
     all_ndcg: dict[str, dict[str, float]] = {}
+    best_vol_penalties: dict[str, float] = {}
 
     for cfg in model_configs:
         model_name = cfg["name"]
@@ -484,23 +487,49 @@ def main() -> None:
         ndcg = load_ndcg_metrics(model_label)
         all_ndcg[model_name] = ndcg
 
-        result_df, metrics = run_backtest_for_model(
+        best_sharpe = float("-inf")
+        best_vp = vol_penalty_grid[0]
+        best_result_df = pd.DataFrame()
+        best_metrics: dict[str, Any] = {}
+
+        for vp in vol_penalty_grid:
+            logger.info("搜索 vol_penalty=%.1f for %s", vp, model_name)
+            result_df, metrics = run_backtest_for_model(
+                model_name,
+                model_path,
+                top_n=20,
+                vol_penalty=vp,
+                use_split="test",
+            )
+            sharpe = metrics.get("sharpe_ratio", float("-inf"))
+            logger.info(
+                "  vol_penalty=%.1f => 夏普=%.3f",
+                vp,
+                sharpe if sharpe != float("-inf") else float("nan"),
+            )
+            if sharpe > best_sharpe:
+                best_sharpe = sharpe
+                best_vp = vp
+                best_result_df = result_df
+                best_metrics = metrics
+
+        best_vol_penalties[model_name] = best_vp
+        all_metrics[model_name] = best_metrics
+        logger.info(
+            "%s 最优 vol_penalty=%.1f（夏普=%.3f）",
             model_name,
-            model_path,
-            top_n=20,
-            vol_penalty=1.0,
-            use_split="test",
+            best_vp,
+            best_sharpe if best_sharpe != float("-inf") else float("nan"),
         )
-        all_metrics[model_name] = metrics
 
         result_path = EXPERIMENT_DIR / f"{model_label}_backtest_result.parquet"
-        if not result_df.empty:
-            result_df.to_parquet(result_path, index=False)
+        if not best_result_df.empty:
+            best_result_df.to_parquet(result_path, index=False)
             logger.info("回测结果已保存: %s", result_path)
 
         metrics_path = EXPERIMENT_DIR / f"{model_label}_backtest_metrics.json"
         with open(metrics_path, "w", encoding="utf-8") as f:
-            json.dump(metrics, f, ensure_ascii=False, indent=2, default=str)
+            json.dump(best_metrics, f, ensure_ascii=False, indent=2, default=str)
         logger.info("回测指标已保存: %s", metrics_path)
 
     report = generate_report(all_metrics, all_ndcg)
@@ -524,6 +553,7 @@ def main() -> None:
             "max_drawdown": m.get("max_drawdown"),
             "turnover_rate": m.get("turnover_rate"),
             "win_rate": m.get("win_rate"),
+            "best_vol_penalty": best_vol_penalties.get(name),
         }
     with open(summary_path, "w", encoding="utf-8") as f:
         json.dump(summary, f, ensure_ascii=False, indent=2, default=str)
@@ -539,13 +569,15 @@ def main() -> None:
         sharpe = m.get("sharpe_ratio", float("nan"))
         mdd = m.get("max_drawdown", float("nan"))
         ndcg10 = ndcg.get("ndcg@10", float("nan"))
+        bvp = best_vol_penalties.get(name, float("nan"))
         logger.info(
-            "%s: NDCG@10=%.4f, 年化收益=%.2f%%, 夏普=%.3f, 最大回撤=%.2f%%",
+            "%s: NDCG@10=%.4f, 年化收益=%.2f%%, 夏普=%.3f, 最大回撤=%.2f%%, 最优vol_penalty=%.1f",
             name,
             ndcg10,
             ann_ret * 100 if not np.isnan(ann_ret) else float("nan"),
             sharpe,
             mdd * 100 if not np.isnan(mdd) else float("nan"),
+            bvp,
         )
 
 

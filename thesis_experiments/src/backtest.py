@@ -1,4 +1,4 @@
-﻿# [共享文件] 本文件同时存在于 project/backend/src/ 和 thesis_experiments/src/，修改时请同步更新两处
+# [共享文件] 本文件同时存在于 project/backend/src/ 和 thesis_experiments/src/，修改时请同步更新两处
 """
 周频滚动回测引擎：固定加载已训练模型，按周五截面调仓，显式交易成本与涨跌停约束。
 
@@ -36,8 +36,12 @@ except ImportError:
 
 from .config import get_settings
 from .data_loader import DATA_OUT_DIR, add_future_return, split_by_time
-from .db import init_db, session_scope
-from .db.models import BacktestResult
+try:
+    from .db import init_db, session_scope
+    from .db.models import BacktestResult
+    _HAS_DB = True
+except ImportError:
+    _HAS_DB = False
 from .metrics import aggregate_metrics, metrics_to_json, weekly_nav_to_daily_business_ffill
 from .predictor import ModelKind, ModelPredictor
 
@@ -431,9 +435,19 @@ class BacktestEngine:
             day_scores = scored_by_date[dt]
 
             if self.vol_penalty > 0 and "volatility_12w" in px.columns:
-                vol_map = px["volatility_12w"].to_dict()
                 day_scores = day_scores.copy()
-                day_scores["score"] = day_scores["score"] - self.vol_penalty * day_scores["stock_code"].map(vol_map).fillna(0.0)
+                score_min = day_scores["score"].min()
+                score_max = day_scores["score"].max()
+                if score_max - score_min > 1e-12:
+                    day_scores["score"] = (day_scores["score"] - score_min) / (score_max - score_min)
+                vol_series = day_scores["stock_code"].map(px["volatility_12w"].to_dict()).fillna(0.0)
+                vol_min = vol_series.min()
+                vol_max = vol_series.max()
+                if vol_max - vol_min > 1e-12:
+                    vol_norm = (vol_series - vol_min) / (vol_max - vol_min)
+                else:
+                    vol_norm = np.zeros_like(vol_series)
+                day_scores["score"] = day_scores["score"] - self.vol_penalty * vol_norm
 
             target = _select_target_codes(day_scores, px, self.top_n, self.enable_limit_price, self.reverse_sort)
 
@@ -1280,6 +1294,8 @@ def persist_backtest_result(
     metrics: dict[str, Any],
 ) -> int:
     """写入 backtest_result 表；返回自增 id。"""
+    if not _HAS_DB:
+        return -1
     init_db()
     nav_payload = {
         "granularity": "weekly",

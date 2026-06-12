@@ -1,82 +1,82 @@
 {
   "B-LGBM": {
     "1": {
-      "annualized_return": 0.1654700060946972,
-      "sharpe_ratio": 0.7107694834875372,
-      "max_drawdown": 0.16369581689019108,
-      "turnover_rate": 1.0295217273112716
+      "annualized_return": 0.09258716914259213,
+      "sharpe_ratio": 0.2872835471433293,
+      "max_drawdown": 0.264084835276595,
+      "turnover_rate": 1.2032764493675547
     },
     "2": {
-      "annualized_return": 0.13380867839238664,
-      "sharpe_ratio": 0.5391164612798287,
-      "max_drawdown": 0.2035515660899253,
-      "turnover_rate": 0.6312701910955423
+      "annualized_return": 0.12442458385152122,
+      "sharpe_ratio": 0.46875490191431496,
+      "max_drawdown": 0.22997366967649946,
+      "turnover_rate": 0.6704292162866509
     },
     "4": {
-      "annualized_return": 0.024883038144532188,
-      "sharpe_ratio": -0.030250659956739142,
-      "max_drawdown": 0.1908972027638698,
-      "turnover_rate": 0.3785615493331643
+      "annualized_return": 0.17151590513155313,
+      "sharpe_ratio": 0.6838199482652154,
+      "max_drawdown": 0.2299472754951819,
+      "turnover_rate": 0.361870477666182
     }
   },
   "B-XGB": {
     "1": {
-      "annualized_return": 0.13699399026042136,
-      "sharpe_ratio": 0.6101397640013944,
-      "max_drawdown": 0.12185907535874974,
-      "turnover_rate": 0.6802150667807184
+      "annualized_return": 0.03419741313008484,
+      "sharpe_ratio": 0.018445641860838195,
+      "max_drawdown": 0.28153892979004536,
+      "turnover_rate": 1.4983921524157067
     },
     "2": {
-      "annualized_return": 0.14857954149412356,
-      "sharpe_ratio": 0.6637184764855325,
-      "max_drawdown": 0.1318655636025543,
-      "turnover_rate": 0.48184414903185996
+      "annualized_return": 0.004226720552057417,
+      "sharpe_ratio": -0.12008680993918631,
+      "max_drawdown": 0.2629812272250107,
+      "turnover_rate": 0.8338935069492324
     },
     "4": {
-      "annualized_return": 0.07613313698924395,
-      "sharpe_ratio": 0.29133530642085814,
-      "max_drawdown": 0.1349864662156054,
-      "turnover_rate": 0.3209989473294652
+      "annualized_return": 0.041360435577014076,
+      "sharpe_ratio": 0.04490873267359372,
+      "max_drawdown": 0.2874028592733855,
+      "turnover_rate": 0.4500849168290182
     }
   },
   "E1a-LGBM": {
     "1": {
-      "annualized_return": 0.12599545183099292,
-      "sharpe_ratio": 0.5758462595637606,
-      "max_drawdown": 0.15932716824709514,
-      "turnover_rate": 0.7872263079012809
+      "annualized_return": -0.03240803486201316,
+      "sharpe_ratio": -0.29991290243781465,
+      "max_drawdown": 0.326835550904927,
+      "turnover_rate": 0.7127009331912428
     },
     "2": {
-      "annualized_return": 0.11219557810433689,
-      "sharpe_ratio": 0.47663843788538857,
-      "max_drawdown": 0.13473348446143862,
-      "turnover_rate": 0.5093030343982953
+      "annualized_return": -0.023312456574364537,
+      "sharpe_ratio": -0.2622997743125907,
+      "max_drawdown": 0.3297284031306731,
+      "turnover_rate": 0.4501601152487126
     },
     "4": {
-      "annualized_return": 0.08314232158653967,
-      "sharpe_ratio": 0.31756307270533424,
-      "max_drawdown": 0.14523716276614018,
-      "turnover_rate": 0.33404898966364777
+      "annualized_return": 0.048452084503026294,
+      "sharpe_ratio": 0.09294690031967152,
+      "max_drawdown": 0.264287875903655,
+      "turnover_rate": 0.27031343913030637
     }
   },
   "E1b-LGBM": {
     "1": {
-      "annualized_return": 0.1387474059549343,
-      "sharpe_ratio": 0.5661408721693649,
-      "max_drawdown": 0.1307888252689623,
-      "turnover_rate": 1.2564542388402453
+      "annualized_return": -0.03654816062125088,
+      "sharpe_ratio": -0.3706089577116631,
+      "max_drawdown": 0.2784691991338294,
+      "turnover_rate": 1.0398843108830478
     },
     "2": {
-      "annualized_return": 0.16786949094558046,
-      "sharpe_ratio": 0.6229253461027567,
-      "max_drawdown": 0.19297679047824412,
-      "turnover_rate": 0.756549566511613
+      "annualized_return": 0.051521533862994184,
+      "sharpe_ratio": 0.12249907277977372,
+      "max_drawdown": 0.1604751036279629,
+      "turnover_rate": 0.6205138908727048
     },
     "4": {
-      "annualized_return": 0.17501850429632504,
-      "sharpe_ratio": 0.6886544896569401,
-      "max_drawdown": 0.1979538249123819,
-      "turnover_rate": 0.42628089993516816
+      "annualized_return": 0.09557406492738951,
+      "sharpe_ratio": 0.3508026911688663,
+      "max_drawdown": 0.1626598064689163,
+      "turnover_rate": 0.3623250906225931
     }
   }
 }

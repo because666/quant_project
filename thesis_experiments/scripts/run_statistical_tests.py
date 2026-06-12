@@ -161,7 +161,7 @@ def get_method_configs() -> dict[str, dict[str, Any]]:
             "label": "XGBoost基线",
             "predictor_type": "single",
             "model_type": "xgboost",
-            "model_path": MODELS_DIR / "xgboost.pkl",
+            "model_path": MODELS_DIR / "xgboost.json",
             "vol_penalty": 0.5,
         },
         "E1a-LGBM": {
@@ -183,7 +183,7 @@ def get_method_configs() -> dict[str, dict[str, Any]]:
             "predictor_type": "fusion",
             "fusion_strategy": "average",
             "model_types": ["lightgbm", "xgboost"],
-            "model_paths": [MODELS_DIR / "lightgbm.pkl", MODELS_DIR / "xgboost.pkl"],
+            "model_paths": [MODELS_DIR / "lightgbm.pkl", MODELS_DIR / "xgboost.json"],
             "vol_penalty": 0.5,
         },
         "E2b-RRF": {
@@ -191,7 +191,7 @@ def get_method_configs() -> dict[str, dict[str, Any]]:
             "predictor_type": "fusion",
             "fusion_strategy": "rrf",
             "model_types": ["lightgbm", "xgboost"],
-            "model_paths": [MODELS_DIR / "lightgbm.pkl", MODELS_DIR / "xgboost.pkl"],
+            "model_paths": [MODELS_DIR / "lightgbm.pkl", MODELS_DIR / "xgboost.json"],
             "vol_penalty": 0.7,
             "k": 60,
         },
@@ -611,7 +611,7 @@ def run_rrf_k_sensitivity(
         logger.info("RRF k敏感性: k=%d", k)
         try:
             lgb_pred = ModelPredictor(model_type="lightgbm", model_path=MODELS_DIR / "lightgbm.pkl")
-            xgb_pred = ModelPredictor(model_type="xgboost", model_path=MODELS_DIR / "xgboost.pkl")
+            xgb_pred = ModelPredictor(model_type="xgboost", model_path=MODELS_DIR / "xgboost.json")
 
             fp = FusionPredictor(fusion_type="rrf", model_types=["lightgbm", "xgboost"], k=k)
             fp._predictors = [lgb_pred, xgb_pred]
