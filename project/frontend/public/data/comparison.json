@@ -1,0 +1,65 @@
+{
+  "generated_at": "2026-06-12T13:01:52Z",
+  "metrics_table": [
+    {
+      "metric": "annualized_return",
+      "lightgbm": 0.3904371920395362,
+      "xgboost": 0.0,
+      "difference": 0.3904371920395362
+    },
+    {
+      "metric": "calmar_ratio",
+      "lightgbm": 3.0924864731680946,
+      "xgboost": null,
+      "difference": null
+    },
+    {
+      "metric": "drawdown_peak_date",
+      "lightgbm": "2024-02-01",
+      "xgboost": "2023-01-06",
+      "difference": null
+    },
+    {
+      "metric": "drawdown_trough_date",
+      "lightgbm": "2024-02-02",
+      "xgboost": "2023-01-06",
+      "difference": null
+    },
+    {
+      "metric": "max_drawdown",
+      "lightgbm": 0.12625348418729,
+      "xgboost": -0.0,
+      "difference": 0.12625348418729
+    },
+    {
+      "metric": "ndcg_at_10",
+      "lightgbm": null,
+      "xgboost": null,
+      "difference": null
+    },
+    {
+      "metric": "sharpe_ratio",
+      "lightgbm": 1.3714642721321277,
+      "xgboost": null,
+      "difference": null
+    },
+    {
+      "metric": "sortino_ratio",
+      "lightgbm": 2.1008471646382274,
+      "xgboost": null,
+      "difference": null
+    },
+    {
+      "metric": "turnover_rate",
+      "lightgbm": null,
+      "xgboost": null,
+      "difference": null
+    },
+    {
+      "metric": "win_rate",
+      "lightgbm": null,
+      "xgboost": null,
+      "difference": null
+    }
+  ]
+}

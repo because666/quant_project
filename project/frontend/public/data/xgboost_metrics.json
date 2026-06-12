@@ -1,31 +1,20 @@
 {
   "val_ndcg": {
-    "ndcg@5": 0.20217460776551904,
-    "ndcg@10": 0.18962120850370454,
-    "ndcg@20": 0.16035244193102013
+    "ndcg@5": 0.5390487556233201,
+    "ndcg@10": 0.549773962780443,
+    "ndcg@20": 0.5789576781291069
   },
   "train_ndcg": {
-    "ndcg@5": 0.5996391531570149,
-    "ndcg@10": 0.5222005636024887,
-    "ndcg@20": 0.4256811815491075
+    "ndcg@5": 0.657833692627446,
+    "ndcg@10": 0.6405808156232605,
+    "ndcg@20": 0.6499448305246904
   },
-  "best_iteration": 8,
-  "feature_count": 15,
+  "best_iteration": 29,
+  "feature_count": 4,
   "features": [
-    "avg_volume_4w",
-    "avg_volume_8w",
-    "macd_signal",
-    "macd_diff",
-    "max_retreat_4w",
-    "macd_level",
-    "volatility_12w",
-    "volatility_4w",
-    "max_retreat_8w",
-    "ma_ratio_4w",
-    "rsi_21",
-    "mom_6m",
     "mom_1m",
-    "mom_3m",
-    "mom_2m"
+    "volatility_4w",
+    "avg_volume_4w",
+    "rsi_14"
   ]
 }
