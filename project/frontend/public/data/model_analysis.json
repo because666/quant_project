@@ -282,31 +282,241 @@
     "features": [
       {
         "name": "mom_1m",
-        "importance": 0.4405785799026489
+        "importance": 0.0
+      },
+      {
+        "name": "mom_2m",
+        "importance": 0.0
+      },
+      {
+        "name": "mom_3m",
+        "importance": 2.043410539627075
+      },
+      {
+        "name": "mom_4m",
+        "importance": 0.0
+      },
+      {
+        "name": "mom_6m",
+        "importance": 0.0
+      },
+      {
+        "name": "mom_12m",
+        "importance": 0.0
+      },
+      {
+        "name": "mom_accel_1m",
+        "importance": 0.0
+      },
+      {
+        "name": "mom_reversal",
+        "importance": 0.0
+      },
+      {
+        "name": "mom_short_long",
+        "importance": 0.0
+      },
+      {
+        "name": "mom_1w",
+        "importance": 0.0
       },
       {
         "name": "volatility_4w",
-        "importance": 0.4325494170188904
+        "importance": 2.9105331897735596
+      },
+      {
+        "name": "volatility_8w",
+        "importance": 2.4535176753997803
+      },
+      {
+        "name": "volatility_12w",
+        "importance": 2.836009979248047
+      },
+      {
+        "name": "volatility_24w",
+        "importance": 2.9014599323272705
+      },
+      {
+        "name": "downside_vol_8w",
+        "importance": 2.40842342376709
+      },
+      {
+        "name": "vol_ratio_4_12",
+        "importance": 2.2838900089263916
+      },
+      {
+        "name": "vol_change_4w",
+        "importance": 0.0
+      },
+      {
+        "name": "realized_var_8w",
+        "importance": 1.926967740058899
       },
       {
         "name": "avg_volume_4w",
-        "importance": 0.3628053069114685
+        "importance": 2.4520108699798584
+      },
+      {
+        "name": "avg_volume_8w",
+        "importance": 2.4628937244415283
+      },
+      {
+        "name": "avg_volume_12w",
+        "importance": 0.0
+      },
+      {
+        "name": "volume_change_1w",
+        "importance": 0.0
+      },
+      {
+        "name": "avg_amount_4w",
+        "importance": 2.3199803829193115
+      },
+      {
+        "name": "rsi_7",
+        "importance": 0.0
       },
       {
         "name": "rsi_14",
-        "importance": 0.3471001982688904
+        "importance": 0.0
+      },
+      {
+        "name": "rsi_21",
+        "importance": 0.0
+      },
+      {
+        "name": "kdj_k",
+        "importance": 0.0
+      },
+      {
+        "name": "kdj_d",
+        "importance": 0.0
+      },
+      {
+        "name": "kdj_j",
+        "importance": 0.0
+      },
+      {
+        "name": "boll_width",
+        "importance": 0.0
+      },
+      {
+        "name": "boll_pct",
+        "importance": 0.0
+      },
+      {
+        "name": "willr_14",
+        "importance": 0.0
+      },
+      {
+        "name": "cci_14",
+        "importance": 0.0
+      },
+      {
+        "name": "ma_ratio_4w",
+        "importance": 0.0
+      },
+      {
+        "name": "ma_ratio_8w",
+        "importance": 0.0
+      },
+      {
+        "name": "ma_ratio_12w",
+        "importance": 0.0
+      },
+      {
+        "name": "ma_ratio_24w",
+        "importance": 0.0
+      },
+      {
+        "name": "ma_slope_4w",
+        "importance": 0.0
+      },
+      {
+        "name": "ma_slope_12w",
+        "importance": 0.0
+      },
+      {
+        "name": "ma_slope_24w",
+        "importance": 0.0
+      },
+      {
+        "name": "ema_ratio_12",
+        "importance": 0.0
+      },
+      {
+        "name": "max_retreat_4w",
+        "importance": 0.0
+      },
+      {
+        "name": "max_retreat_8w",
+        "importance": 0.0
+      },
+      {
+        "name": "max_retreat_12w",
+        "importance": 0.0
+      },
+      {
+        "name": "skewness_8w",
+        "importance": 0.0
+      },
+      {
+        "name": "kurtosis_12w",
+        "importance": 0.0
+      },
+      {
+        "name": "ret_quantile_25_8w",
+        "importance": 0.0
+      },
+      {
+        "name": "obv_change_4w",
+        "importance": 0.0
+      },
+      {
+        "name": "vol_price_corr_8w",
+        "importance": 0.0
+      },
+      {
+        "name": "up_ratio_4w",
+        "importance": 0.0
+      },
+      {
+        "name": "up_ratio_12w",
+        "importance": 0.0
+      },
+      {
+        "name": "vol_up_down_ratio",
+        "importance": 0.0
       }
     ],
     "params": {
       "objective": "rank:ndcg",
-      "best_iteration": 29,
-      "feature_count": 4,
-      "val_ndcg@5": 0.5390487556233201,
-      "val_ndcg@10": 0.549773962780443,
-      "val_ndcg@20": 0.5789576781291069,
-      "train_ndcg@5": 0.657833692627446,
-      "train_ndcg@10": 0.6405808156232605,
-      "train_ndcg@20": 0.6499448305246904
+      "best_iteration": 48,
+      "feature_count": 52,
+      "label_fn": "return_aware_relevance",
+      "val_ndcg@5": 0.5997972775528634,
+      "val_ndcg@10": 0.5908666976650693,
+      "val_ndcg@20": 0.5757841894138028,
+      "train_ndcg@5": 0.5746135302444304,
+      "train_ndcg@10": 0.5620269625178188,
+      "train_ndcg@20": 0.5570260058828471,
+      "eval_metric": [
+        "ndcg@5",
+        "ndcg@20",
+        "ndcg@10"
+      ],
+      "ndcg_exp_gain": false,
+      "booster": "gbtree",
+      "eta": 0.032448935921484644,
+      "max_depth": 3,
+      "subsample": 0.617777311126086,
+      "colsample_bytree": 0.4933486770024419,
+      "min_child_weight": 87,
+      "gamma": 1.8262437174581492,
+      "alpha": 1.3529438335164277,
+      "seed": 42,
+      "reg_lambda": 5.871137904233674,
+      "lambda": 5.871137904233674
     }
   }
 }

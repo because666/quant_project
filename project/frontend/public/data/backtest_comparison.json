@@ -1,35 +1,116 @@
 {
-  "generated_at": "2026-06-12T13:01:52Z",
+  "generated_at": "2026-06-12T13:51:41Z",
+  "kind": "strategy_comparison",
+  "params_common": {
+    "model_type": "lightgbm",
+    "top_n": 10,
+    "initial_capital": 1000000.0,
+    "commission": 0.0003,
+    "slippage": 0.001,
+    "stamp_tax": 0.0005,
+    "vol_penalty": 0.0,
+    "rebalance_freq": 1,
+    "use_split": "test",
+    "train_end": "2020-12-31",
+    "val_end": "2022-12-31",
+    "skip_initial_weeks": 0
+  },
+  "metrics_lightgbm": {
+    "annualized_return": 0.3904371920395362,
+    "sharpe_ratio": 1.3714642721321277,
+    "max_drawdown": 0.12625348418729,
+    "drawdown_peak_date": "2024-02-01",
+    "drawdown_trough_date": "2024-02-02",
+    "calmar_ratio": 3.0924864731680946,
+    "sortino_ratio": 2.1008471646382274,
+    "turnover_rate": 0.7890179158435364,
+    "win_rate": 0.5858585858585859,
+    "ndcg_at_10": null,
+    "avg_holding_weeks": 2.557544757033248,
+    "sharpe_ci": {
+      "point": -0.18205468861815066,
+      "lower": -0.6077947674806851,
+      "upper": 0.5628321784254908
+    },
+    "annualized_return_ci": {
+      "point": -0.9922683269886691,
+      "lower": -0.9999998596178846,
+      "upper": 2486327.4764599325
+    }
+  },
+  "metrics_xgboost": {
+    "annualized_return": 0.25803553569495974,
+    "sharpe_ratio": 1.1982951157978996,
+    "max_drawdown": 0.15217993174673927,
+    "drawdown_peak_date": "2023-11-30",
+    "drawdown_trough_date": "2024-02-02",
+    "calmar_ratio": 1.6955950284193015,
+    "sortino_ratio": 1.7314346955479456,
+    "turnover_rate": 1.1601292402306376,
+    "win_rate": 0.5656565656565656,
+    "ndcg_at_10": null,
+    "avg_holding_weeks": 1.721170395869191,
+    "sharpe_ci": {
+      "point": 0.20768815503616475,
+      "lower": -0.62561988282664,
+      "upper": 0.5922237287010829
+    },
+    "annualized_return_ci": {
+      "point": 140.11637195749967,
+      "lower": -0.9999998922985314,
+      "upper": 3750605.385723313
+    }
+  },
   "metrics_table": [
     {
       "metric": "annualized_return",
       "lightgbm": 0.3904371920395362,
-      "xgboost": 0.0,
-      "difference": 0.3904371920395362
+      "xgboost": 0.25803553569495974,
+      "difference": 0.13240165634457646
+    },
+    {
+      "metric": "annualized_return_ci",
+      "lightgbm": {
+        "point": -0.9922683269886691,
+        "lower": -0.9999998596178846,
+        "upper": 2486327.4764599325
+      },
+      "xgboost": {
+        "point": 140.11637195749967,
+        "lower": -0.9999998922985314,
+        "upper": 3750605.385723313
+      },
+      "difference": null
+    },
+    {
+      "metric": "avg_holding_weeks",
+      "lightgbm": 2.557544757033248,
+      "xgboost": 1.721170395869191,
+      "difference": 0.8363743611640571
     },
     {
       "metric": "calmar_ratio",
       "lightgbm": 3.0924864731680946,
-      "xgboost": null,
-      "difference": null
+      "xgboost": 1.6955950284193015,
+      "difference": 1.396891444748793
     },
     {
       "metric": "drawdown_peak_date",
       "lightgbm": "2024-02-01",
-      "xgboost": "2023-01-06",
+      "xgboost": "2023-11-30",
       "difference": null
     },
     {
       "metric": "drawdown_trough_date",
       "lightgbm": "2024-02-02",
-      "xgboost": "2023-01-06",
+      "xgboost": "2024-02-02",
       "difference": null
     },
     {
       "metric": "max_drawdown",
       "lightgbm": 0.12625348418729,
-      "xgboost": -0.0,
-      "difference": 0.12625348418729
+      "xgboost": 0.15217993174673927,
+      "difference": -0.025926447559449284
     },
     {
       "metric": "ndcg_at_10",
@@ -38,28 +119,152 @@
       "difference": null
     },
     {
+      "metric": "sharpe_ci",
+      "lightgbm": {
+        "point": -0.18205468861815066,
+        "lower": -0.6077947674806851,
+        "upper": 0.5628321784254908
+      },
+      "xgboost": {
+        "point": 0.20768815503616475,
+        "lower": -0.62561988282664,
+        "upper": 0.5922237287010829
+      },
+      "difference": null
+    },
+    {
       "metric": "sharpe_ratio",
       "lightgbm": 1.3714642721321277,
-      "xgboost": null,
-      "difference": null
+      "xgboost": 1.1982951157978996,
+      "difference": 0.17316915633422814
     },
     {
       "metric": "sortino_ratio",
       "lightgbm": 2.1008471646382274,
-      "xgboost": null,
-      "difference": null
+      "xgboost": 1.7314346955479456,
+      "difference": 0.3694124690902818
     },
     {
       "metric": "turnover_rate",
-      "lightgbm": null,
-      "xgboost": null,
-      "difference": null
+      "lightgbm": 0.7890179158435364,
+      "xgboost": 1.1601292402306376,
+      "difference": -0.37111132438710115
     },
     {
       "metric": "win_rate",
-      "lightgbm": null,
-      "xgboost": null,
-      "difference": null
+      "lightgbm": 0.5858585858585859,
+      "xgboost": 0.5656565656565656,
+      "difference": 0.02020202020202022
     }
-  ]
+  ],
+  "monthly_returns_heatmap": {
+    "lightgbm": {
+      "years": [
+        2023,
+        2024
+      ],
+      "month_columns": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "values": [
+        [
+          null,
+          0.05535022268992429,
+          -0.008237660638608424,
+          0.01964320605712433,
+          -0.002575147134763589,
+          0.028211114375669144,
+          0.1106799008834145,
+          -0.04813796216615762,
+          0.054965958591389086,
+          -0.017378877919963176,
+          0.04416079352883773,
+          -0.07130842783055691
+        ],
+        [
+          0.08273178453418173,
+          -0.05350460723723627,
+          0.06321222783797653,
+          0.02488114807851094,
+          0.051679961049825085,
+          -0.045837490679592086,
+          -0.015907115188353305,
+          0.045546389321063696,
+          0.15113099234493488,
+          0.13614774834427057,
+          0.10068583512324003,
+          -0.016591712551168203
+        ]
+      ],
+      "note": "按自然月内最后一个调仓日净值计算月度收益；首月无前值则为空"
+    },
+    "xgboost": {
+      "years": [
+        2023,
+        2024
+      ],
+      "month_columns": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "values": [
+        [
+          null,
+          0.05915320062857443,
+          0.001754311882458337,
+          0.05440890082387151,
+          0.005607151412831302,
+          0.02003225252736618,
+          0.03197358446725529,
+          -0.0396143926796203,
+          0.05231557101940232,
+          0.014766056459201371,
+          0.05079083396517303,
+          -0.026479998945211247
+        ],
+        [
+          -0.02810545849467283,
+          -0.05975949429447436,
+          0.010199233004950514,
+          0.03464453115553101,
+          0.020879638205351325,
+          -0.08375309592074065,
+          -0.008163981171117163,
+          0.015103226065386943,
+          0.08927621443428291,
+          0.05323506372671316,
+          0.16923486878837335,
+          0.036416621963442086
+        ]
+      ],
+      "note": "按自然月内最后一个调仓日净值计算月度收益；首月无前值则为空"
+    }
+  },
+  "comparison_nav_file": "comparison_nav.json",
+  "notes": {
+    "nav_alignment": "excess = lightgbm_nav_norm / xgboost_nav_norm - 1",
+    "win_rate": "周度胜率：相邻调仓周组合净值收益为正的周占比",
+    "avg_holding_weeks": "平均持有周数：各标的连续持有周数的算术平均"
+  }
 }

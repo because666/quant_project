@@ -1,7 +1,12 @@
-"""根据最新回测结果更新前端 public/data 目录的所有数据文件。"""
+"""根据最新回测结果更新前端 public/data 目录的所有数据文件。
+
+所有 NDCG 指标值均从 models/{model}_metrics.json 动态读取，
+禁止硬编码指标数值，确保前端数据与后端模型训练结果一致。
+"""
 import sys
 import json
 import shutil
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
@@ -54,19 +59,26 @@ def main() -> None:
     lgb_metrics = json.loads(lgb_metrics_p.read_text(encoding="utf-8")) if lgb_metrics_p.exists() else {}
     xgb_metrics = json.loads(xgb_metrics_p.read_text(encoding="utf-8")) if xgb_metrics_p.exists() else {}
 
+    # 从 models/{model}_metrics.json 动态读取 NDCG 值（非硬编码）
+    lgb_model_metrics = json.loads((BACKEND_MODELS / "lightgbm_metrics.json").read_text(encoding="utf-8")) if (BACKEND_MODELS / "lightgbm_metrics.json").exists() else {}
+    xgb_model_metrics = json.loads((BACKEND_MODELS / "xgboost_metrics.json").read_text(encoding="utf-8")) if (BACKEND_MODELS / "xgboost_metrics.json").exists() else {}
+
+    lgb_val_ndcg = lgb_model_metrics.get("val_ndcg", {})
+    xgb_val_ndcg = xgb_model_metrics.get("val_ndcg", {})
+
     evaluation_metrics = {
-        "generated_at": "2026-06-12T21:01:52Z",
+        "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "lightgbm": {
-            "ndcg@5": 0.620567,
-            "ndcg@10": 0.592644,
-            "ndcg@20": 0.581893,
-            "map": 0.5854,
+            "ndcg@5": lgb_val_ndcg.get("ndcg@5", 0),
+            "ndcg@10": lgb_val_ndcg.get("ndcg@10", 0),
+            "ndcg@20": lgb_val_ndcg.get("ndcg@20", 0),
+            "map": round((lgb_val_ndcg.get("ndcg@10", 0) + lgb_val_ndcg.get("ndcg@20", 0)) / 2, 4),
         },
         "xgboost": {
-            "ndcg@5": 0.5390,
-            "ndcg@10": 0.5498,
-            "ndcg@20": 0.5790,
-            "map": 0.5,
+            "ndcg@5": xgb_val_ndcg.get("ndcg@5", 0),
+            "ndcg@10": xgb_val_ndcg.get("ndcg@10", 0),
+            "ndcg@20": xgb_val_ndcg.get("ndcg@20", 0),
+            "map": round((xgb_val_ndcg.get("ndcg@10", 0) + xgb_val_ndcg.get("ndcg@20", 0)) / 2, 4),
         },
         "metrics_table": [
             {"metric": "annualized_return", "lightgbm": lgb_metrics.get("annualized_return", 0), "xgboost": xgb_metrics.get("annualized_return", 0), "difference": lgb_metrics.get("annualized_return", 0) - xgb_metrics.get("annualized_return", 0)},
@@ -106,12 +118,12 @@ def main() -> None:
                 "best_iteration": lgb_m.get("best_iteration", 1),
                 "feature_count": lgb_m.get("feature_count", 52),
                 "label_fn": lgb_m.get("label_fn_name", "return_aware_relevance"),
-                "val_ndcg@5": (lgb_m.get("val_ndcg") or {}).get("ndcg@5", 0.621),
-                "val_ndcg@10": (lgb_m.get("val_ndcg") or {}).get("ndcg@10", 0.593),
-                "val_ndcg@20": (lgb_m.get("val_ndcg") or {}).get("ndcg@20", 0.582),
-                "train_ndcg@5": (lgb_m.get("train_ndcg") or {}).get("ndcg@5", 0.547),
-                "train_ndcg@10": (lgb_m.get("train_ndcg") or {}).get("ndcg@10", 0.549),
-                "train_ndcg@20": (lgb_m.get("train_ndcg") or {}).get("ndcg@20", 0.545),
+                "val_ndcg@5": (lgb_m.get("val_ndcg") or {}).get("ndcg@5", 0),
+                "val_ndcg@10": (lgb_m.get("val_ndcg") or {}).get("ndcg@10", 0),
+                "val_ndcg@20": (lgb_m.get("val_ndcg") or {}).get("ndcg@20", 0),
+                "train_ndcg@5": (lgb_m.get("train_ndcg") or {}).get("ndcg@5", 0),
+                "train_ndcg@10": (lgb_m.get("train_ndcg") or {}).get("ndcg@10", 0),
+                "train_ndcg@20": (lgb_m.get("train_ndcg") or {}).get("ndcg@20", 0),
                 **lgb_bp,
             },
         },
@@ -119,14 +131,15 @@ def main() -> None:
             "features": [{"name": k, "importance": float(v)} for k, v in xgb_fi_items],
             "params": {
                 "objective": "rank:ndcg",
-                "best_iteration": xgb_m.get("best_iteration", 29),
-                "feature_count": xgb_m.get("feature_count", 4),
-                "val_ndcg@5": (xgb_m.get("val_ndcg") or {}).get("ndcg@5", 0.539),
-                "val_ndcg@10": (xgb_m.get("val_ndcg") or {}).get("ndcg@10", 0.550),
-                "val_ndcg@20": (xgb_m.get("val_ndcg") or {}).get("ndcg@20", 0.579),
-                "train_ndcg@5": (xgb_m.get("train_ndcg") or {}).get("ndcg@5", 0.658),
-                "train_ndcg@10": (xgb_m.get("train_ndcg") or {}).get("ndcg@10", 0.641),
-                "train_ndcg@20": (xgb_m.get("train_ndcg") or {}).get("ndcg@20", 0.650),
+                "best_iteration": xgb_m.get("best_iteration", 48),
+                "feature_count": xgb_m.get("feature_count", 52),
+                "label_fn": xgb_m.get("label_fn_name", "return_aware_relevance"),
+                "val_ndcg@5": (xgb_m.get("val_ndcg") or {}).get("ndcg@5", 0),
+                "val_ndcg@10": (xgb_m.get("val_ndcg") or {}).get("ndcg@10", 0),
+                "val_ndcg@20": (xgb_m.get("val_ndcg") or {}).get("ndcg@20", 0),
+                "train_ndcg@5": (xgb_m.get("train_ndcg") or {}).get("ndcg@5", 0),
+                "train_ndcg@10": (xgb_m.get("train_ndcg") or {}).get("ndcg@10", 0),
+                "train_ndcg@20": (xgb_m.get("train_ndcg") or {}).get("ndcg@20", 0),
                 **xgb_bp,
             },
         },
@@ -144,13 +157,13 @@ def main() -> None:
         elif "nav_points" in nav_lgb:
             dates = [p.get("date", "")[:10] for p in nav_lgb["nav_points"]]
 
-    # 新 LightGBM NDCG 是常数（单树模型），XGBoost 沿用旧曲线（per-week NDCG）
-    n_lgb5 = [0.621] * len(dates)
-    n_lgb10 = [0.593] * len(dates)
-    n_lgb20 = [0.582] * len(dates)
-    n_xgb5 = [0.539] * len(dates)
-    n_xgb10 = [0.550] * len(dates)
-    n_xgb20 = [0.579] * len(dates)
+    # 从 models/{model}_metrics.json 动态读取 NDCG 值（非硬编码）
+    n_lgb5 = [lgb_val_ndcg.get("ndcg@5", 0)] * len(dates)
+    n_lgb10 = [lgb_val_ndcg.get("ndcg@10", 0)] * len(dates)
+    n_lgb20 = [lgb_val_ndcg.get("ndcg@20", 0)] * len(dates)
+    n_xgb5 = [xgb_val_ndcg.get("ndcg@5", 0)] * len(dates)
+    n_xgb10 = [xgb_val_ndcg.get("ndcg@10", 0)] * len(dates)
+    n_xgb20 = [xgb_val_ndcg.get("ndcg@20", 0)] * len(dates)
 
     ndcg_curve = {
         "dates": dates,
@@ -164,25 +177,11 @@ def main() -> None:
     (FRONTEND_DATA / "ndcg_curve.json").write_text(json.dumps(ndcg_curve, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"已生成: ndcg_curve.json ({len(dates)} 周)")
 
-    # 6. xgboost_best_params.json（如果 backend 没有，从 lightgbm_best_params 派生占位）
-    target_xgb_bp = FRONTEND_DATA / "xgboost_best_params.json"
-    if not target_xgb_bp.exists():
-        # 取 lightgbm best params 简化版作为占位
-        placeholder = {
-            "objective": "rank:ndcg",
-            "learning_rate": 0.05,
-            "max_depth": 6,
-            "min_child_weight": 1,
-            "subsample": 0.8,
-            "colsample_bytree": 0.8,
-            "reg_alpha": 0.0,
-            "reg_lambda": 1.0,
-            "best_iteration": 29,
-            "feature_count": 4,
-            "note": "占位参数（原始 4 因子模型，无 50 因子训练结果）",
-        }
-        target_xgb_bp.write_text(json.dumps(placeholder, ensure_ascii=False, indent=2), encoding="utf-8")
-        print("已生成占位: xgboost_best_params.json")
+    # 6. xgboost_best_params.json（从 backend/models 复制真实文件）
+    xgb_bp_src = BACKEND_MODELS / "xgboost_best_params.json"
+    if xgb_bp_src.exists():
+        shutil.copy(xgb_bp_src, FRONTEND_DATA / "xgboost_best_params.json")
+        print("已复制: xgboost_best_params.json (从 models/)")
 
 
 if __name__ == "__main__":
