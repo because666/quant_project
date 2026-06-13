@@ -63,23 +63,30 @@ INITIAL_CAPITAL = 1_000_000.0
 N_QUANTILES = 5
 N_BOOTSTRAP = 5000
 
+VOL_PENALTY_GRID: list[float] = [0.0, 0.3, 0.5, 0.7, 1.0, 1.5, 2.0, 3.0, 5.0]
 
-def load_weekly_test_data() -> pd.DataFrame:
+
+def load_weekly_data(data_dir: Path | None = None) -> pd.DataFrame:
     """
-    加载周频测试集数据。
+    加载完整周频数据（包含训练集、验证集、测试集）。
+
+    用于 vol_penalty 验证集搜索和测试集回测，BacktestEngine 内部通过
+    use_split 参数自动选择对应的数据子集。
+
+    参数:
+        data_dir: 数据目录路径，为None时使用BacktestEngine内部默认路径
 
     返回:
-        包含 date, stock_code, 因子列, future_return_1w 的DataFrame
+        包含 date, stock_code, 因子列, future_return_1w 的完整DataFrame
 
     异常:
         若数据文件不存在或格式异常，抛出FileNotFoundError。
     """
-    engine = BacktestEngine(model_type="lightgbm", top_n=TOP_N, initial_capital=INITIAL_CAPITAL)
+    engine = BacktestEngine(model_type="lightgbm", top_n=TOP_N, initial_capital=INITIAL_CAPITAL, data_dir=data_dir)
     weekly_df = engine.load_weekly_data(concat_splits=True)
-    test_df = weekly_df[weekly_df["date"] >= "2022-07-01"].copy()
-    test_df = test_df.sort_values(["date", "stock_code"]).reset_index(drop=True)
-    logger.info("测试集加载完成: %d行, %d个截面", len(test_df), test_df["date"].nunique())
-    return test_df
+    weekly_df = weekly_df.sort_values(["date", "stock_code"]).reset_index(drop=True)
+    logger.info("周频数据加载完成: %d行, %d个截面", len(weekly_df), weekly_df["date"].nunique())
+    return weekly_df
 
 
 def get_method_configurations() -> dict[str, dict[str, Any]]:
@@ -100,14 +107,12 @@ def get_method_configurations() -> dict[str, dict[str, Any]]:
             "predictor_type": "single",
             "model_type": "lightgbm",
             "model_path": MODELS_DIR / "lightgbm.pkl",
-            "vol_penalty": 1.0,
         },
         "M2-B-XGB": {
             "label": "M2: XGBoost基线",
             "predictor_type": "single",
             "model_type": "xgboost",
             "model_path": MODELS_DIR / "xgboost.json",
-            "vol_penalty": 0.5,
         },
         "M3-E1b-RRF": {
             "label": "M3: 收益-夏普感知+RRF",
@@ -118,7 +123,6 @@ def get_method_configurations() -> dict[str, dict[str, Any]]:
                 MODELS_DIR / "e1b_lightgbm.pkl",
                 MODELS_DIR / "xgboost.json",
             ],
-            "vol_penalty": 0.7,
             "k": 60,
         },
         "M4-E1a-AVG": {
@@ -130,12 +134,11 @@ def get_method_configurations() -> dict[str, dict[str, Any]]:
                 MODELS_DIR / "e1a_lightgbm.pkl",
                 MODELS_DIR / "xgboost.json",
             ],
-            "vol_penalty": 0.5,
         },
     }
 
 
-def create_predictor(config: dict[str, Any]) -> ModelPredictor | FusionPredictor:
+def create_predictor(config: dict[str, Any], data_dir: Path | None = None) -> ModelPredictor | FusionPredictor:
     """
     根据方法配置创建预测器实例。
 
@@ -144,6 +147,7 @@ def create_predictor(config: dict[str, Any]) -> ModelPredictor | FusionPredictor
 
     参数:
         config: 方法配置字典
+        data_dir: 数据目录路径，为None时使用ModelPredictor内部默认路径
 
     返回:
         ModelPredictor或FusionPredictor实例
@@ -155,12 +159,13 @@ def create_predictor(config: dict[str, Any]) -> ModelPredictor | FusionPredictor
         return ModelPredictor(
             model_type=config["model_type"],
             model_path=config["model_path"],
+            data_dir=data_dir,
         )
     elif config["predictor_type"] == "fusion":
         sub_predictors: list[ModelPredictor] = []
         for mt, mp in zip(config["model_types"], config["model_paths"]):
             actual_type = "lightgbm" if "lightgbm" in mt else "xgboost"
-            sub_predictors.append(ModelPredictor(model_type=actual_type, model_path=mp))
+            sub_predictors.append(ModelPredictor(model_type=actual_type, model_path=mp, data_dir=data_dir))
 
         fp = FusionPredictor(
             fusion_type=config["fusion_strategy"],
@@ -172,10 +177,88 @@ def create_predictor(config: dict[str, Any]) -> ModelPredictor | FusionPredictor
         raise ValueError(f"未知的预测器类型: {config['predictor_type']}")
 
 
+def search_best_vol_penalty(
+    name: str,
+    config: dict[str, Any],
+    weekly_df: pd.DataFrame,
+    data_dir: Path | None = None,
+) -> float:
+    """
+    在验证集上搜索最优 vol_penalty，与实验1搜索流程一致。
+
+    对 VOL_PENALTY_GRID 中每个候选值，创建 BacktestEngine 并在验证集上运行回测，
+    计算夏普比率，选择夏普比率最高的 vol_penalty 作为最优值。
+
+    参数:
+        name: 方法名称，用于日志输出
+        config: 方法配置字典，包含预测器类型、模型路径等信息
+        weekly_df: 周频数据（包含验证集和测试集）
+        data_dir: 数据目录路径，为None时使用BacktestEngine内部默认路径
+
+    返回:
+        验证集上夏普比率最高的 vol_penalty 值；若所有候选值回测均失败，返回0.0
+
+    异常:
+        若验证集为空或回测引擎初始化失败，记录错误日志并返回0.0
+    """
+    best_sharpe: float = float("-inf")
+    best_vp: float = 0.0
+
+    predictor = create_predictor(config, data_dir=data_dir)
+
+    for vp in VOL_PENALTY_GRID:
+        try:
+            engine = BacktestEngine(
+                model_type=config.get("model_type", "lightgbm"),
+                top_n=TOP_N,
+                initial_capital=INITIAL_CAPITAL,
+                vol_penalty=vp,
+                custom_predictor=predictor,
+                data_dir=data_dir,
+            )
+
+            result_df = engine.run_backtest(
+                weekly_df,
+                predictor=predictor,
+                use_split="val",  # type: ignore[arg-type]
+            )
+
+            if result_df.empty:
+                logger.warning("验证集回测结果为空: %s, vol_penalty=%.1f", name, vp)
+                continue
+
+            metrics = compute_backtest_metrics(result_df, weekly_df, extended=True)
+            sharpe = metrics.get("sharpe_ratio") or float("-inf")
+
+            logger.info(
+                "  [验证集] %s vol_penalty=%.1f => 夏普=%.4f",
+                name, vp,
+                sharpe if sharpe != float("-inf") else float("nan"),
+            )
+
+            if sharpe > best_sharpe:
+                best_sharpe = sharpe
+                best_vp = vp
+
+        except Exception as exc:
+            logger.error(
+                "验证集回测失败: %s, vol_penalty=%.1f, 原因: %s",
+                name, vp, exc,
+            )
+
+    logger.info(
+        "%s 验证集最优 vol_penalty=%.1f（夏普=%.4f）",
+        name, best_vp,
+        best_sharpe if best_sharpe != float("-inf") else float("nan"),
+    )
+    return best_vp
+
+
 def run_backtest_for_method(
     name: str,
     config: dict[str, Any],
     weekly_df: pd.DataFrame,
+    data_dir: Path | None = None,
 ) -> tuple[pd.DataFrame, dict[str, Any]]:
     """
     对单个方法运行回测。
@@ -184,13 +267,14 @@ def run_backtest_for_method(
         name: 方法名称
         config: 方法配置字典
         weekly_df: 周频数据
+        data_dir: 数据目录路径，为None时使用BacktestEngine内部默认路径
 
     返回:
         (回测结果DataFrame, 回测指标字典)
     """
     logger.info("运行回测: %s (%s)", name, config["label"])
 
-    predictor = create_predictor(config)
+    predictor = create_predictor(config, data_dir=data_dir)
     vol_penalty = config.get("vol_penalty", 0.0)
 
     engine = BacktestEngine(
@@ -199,6 +283,7 @@ def run_backtest_for_method(
         initial_capital=INITIAL_CAPITAL,
         vol_penalty=vol_penalty,
         custom_predictor=predictor,
+        data_dir=data_dir,
     )
 
     result_df = engine.run_backtest(
@@ -262,6 +347,7 @@ def run_quantile_analysis(
     test_df: pd.DataFrame,
     all_results: dict[str, pd.DataFrame],
     configs: dict[str, dict[str, Any]],
+    data_dir: Path | None = None,
 ) -> dict[str, dict[str, Any]]:
     """
     对每种方法进行分位数组合分析（多空组合收益）。
@@ -270,6 +356,7 @@ def run_quantile_analysis(
         test_df: 测试集数据
         all_results: 方法名到回测结果DataFrame的映射
         configs: 方法配置字典
+        data_dir: 数据目录路径，为None时使用ModelPredictor内部默认路径
 
     返回:
         方法名到分位数分析结果的映射
@@ -280,7 +367,7 @@ def run_quantile_analysis(
         logger.info("分位数分析: %s", name)
 
         try:
-            predictor = create_predictor(config)
+            predictor = create_predictor(config, data_dir=data_dir)
             scores_df = predictor.predict_panel(test_df)
 
             if "future_return_1w" not in test_df.columns:
@@ -399,6 +486,7 @@ def generate_comprehensive_table(
     all_metrics: dict[str, dict[str, Any]],
     significance_tests: list[dict[str, Any]],
     configs: dict[str, dict[str, Any]],
+    best_vol_penalties: dict[str, float],
 ) -> str:
     """
     生成综合对比表（Markdown格式）。
@@ -407,6 +495,7 @@ def generate_comprehensive_table(
         all_metrics: 方法名到回测指标的映射
         significance_tests: 显著性检验结果列表
         configs: 方法配置字典
+        best_vol_penalties: 方法名到验证集最优vol_penalty的映射
 
     返回:
         Markdown格式的综合对比表
@@ -419,11 +508,11 @@ def generate_comprehensive_table(
     lines.append("### 综合对比表")
     lines.append("")
     lines.append(
-        "| 方法 | 损失函数 | 融合策略 | 年化收益(%) | 夏普比率 | 最大回撤(%) | "
+        "| 方法 | 损失函数 | 融合策略 | vol_penalty | 年化收益(%) | 夏普比率 | 最大回撤(%) | "
         "换手率 | 胜率(%) | 夏普95%CI | vs M1 p值 |"
     )
     lines.append(
-        "|------|---------|---------|------------|---------|------------|"
+        "|------|---------|---------|------------|------------|---------|------------|"
         "-------|--------|----------|----------|"
     )
 
@@ -436,6 +525,7 @@ def generate_comprehensive_table(
         md = m.get("max_drawdown", 0) * 100
         tr = m.get("turnover_rate", 0)
         wr = m.get("win_rate", 0) * 100
+        vp = best_vol_penalties.get(name, 0.0)
 
         loss_label = "标准NDCG"
         if "E1a" in name:
@@ -467,7 +557,7 @@ def generate_comprehensive_table(
             p_str = f"{p_val:.4f}{sig_mark}"
 
         lines.append(
-            f"| {config['label']} | {loss_label} | {fusion_label} | "
+            f"| {config['label']} | {loss_label} | {fusion_label} | {vp:.1f} | "
             f"{ann_ret:.2f} | {sr:.4f} | {md:.2f} | {tr:.4f} | {wr:.2f} | "
             f"{ci_str} | {p_str} |"
         )
@@ -606,6 +696,7 @@ def generate_report(
     quantile_data: dict[str, dict[str, Any]],
     significance_tests: list[dict[str, Any]],
     configs: dict[str, dict[str, Any]],
+    best_vol_penalties: dict[str, float],
 ) -> str:
     """
     生成实验4完整报告（Markdown格式）。
@@ -616,6 +707,7 @@ def generate_report(
         quantile_data: 多空组合分析结果
         significance_tests: 显著性检验结果
         configs: 方法配置字典
+        best_vol_penalties: 方法名到验证集最优vol_penalty的映射
 
     返回:
         Markdown格式的完整报告文本
@@ -635,10 +727,23 @@ def generate_report(
     lines.append("| M3 | 收益+夏普感知 | RRF融合 | 改进损失+融合 |")
     lines.append("| M4 | 收益加权 | 分数平均融合 | 改进损失+融合 |")
     lines.append("")
+    lines.append("### vol_penalty 搜索方法")
+    lines.append("")
+    lines.append("各方法的 vol_penalty（波动率惩罚系数）不采用硬编码，而是在验证集上通过网格搜索确定最优值。")
+    lines.append(f"搜索网格: {VOL_PENALTY_GRID}")
+    lines.append("搜索标准: 验证集夏普比率最高")
+    lines.append("验证集区间: train_end 之后、val_end 之前（由 BacktestEngine 内部按 use_split='val' 自动划分）")
+    lines.append("")
+    lines.append("| 方法 | 最优 vol_penalty |")
+    lines.append("|------|-----------------|")
+    for name, config in configs.items():
+        vp = best_vol_penalties.get(name, 0.0)
+        lines.append(f"| {config['label']} | {vp:.1f} |")
+    lines.append("")
 
     lines.append("## 2. 综合对比")
     lines.append("")
-    lines.append(generate_comprehensive_table(all_metrics, significance_tests, configs))
+    lines.append(generate_comprehensive_table(all_metrics, significance_tests, configs, best_vol_penalties))
 
     lines.append("## 3. 分年度分析")
     lines.append("")
@@ -736,6 +841,13 @@ def _safe_float(val: Any) -> float:
 
 def main() -> None:
     """实验4主函数。"""
+    import argparse
+    parser = argparse.ArgumentParser(description="实验4：综合对比 + 分年度分析 + 多空组合 + 统计检验")
+    parser.add_argument("--data-dir", type=str, default=None, help="数据目录（默认data/）")
+    args = parser.parse_args()
+
+    data_dir = Path(args.data_dir) if args.data_dir else None
+
     EXPERIMENT_DIR.mkdir(parents=True, exist_ok=True)
 
     logger.info("=" * 60)
@@ -744,8 +856,16 @@ def main() -> None:
 
     configs = get_method_configurations()
 
-    logger.info("步骤1：加载测试数据")
-    test_df = load_weekly_test_data()
+    logger.info("步骤1：加载周频数据")
+    weekly_df = load_weekly_data(data_dir=data_dir)
+
+    logger.info("步骤1.5：搜索各方法最优 vol_penalty")
+    best_vol_penalties: dict[str, float] = {}
+    for name, config in configs.items():
+        best_vp = search_best_vol_penalty(name, config, weekly_df, data_dir=data_dir)
+        best_vol_penalties[name] = best_vp
+        config["vol_penalty"] = best_vp
+        logger.info("  %s 最优 vol_penalty=%.1f", name, best_vp)
 
     logger.info("步骤2：运行各方法回测")
     all_metrics: dict[str, dict[str, Any]] = {}
@@ -753,7 +873,7 @@ def main() -> None:
 
     for name, config in configs.items():
         try:
-            result_df, metrics = run_backtest_for_method(name, config, test_df)
+            result_df, metrics = run_backtest_for_method(name, config, weekly_df, data_dir=data_dir)
             all_metrics[name] = metrics
             all_results[name] = result_df
 
@@ -771,14 +891,21 @@ def main() -> None:
     logger.info("步骤3：分年度分析")
     yearly_data = run_yearly_analysis(all_results)
 
+    # 构建测试集数据用于分位数分析
+    test_df = weekly_df[weekly_df["date"] >= "2022-07-01"].copy()
+    test_df = test_df.sort_values(["date", "stock_code"]).reset_index(drop=True)
+
     logger.info("步骤4：多空组合分析")
-    quantile_data = run_quantile_analysis(test_df, all_results, configs)
+    quantile_data = run_quantile_analysis(test_df, all_results, configs, data_dir=data_dir)
 
     logger.info("步骤5：统计检验")
     significance_tests = run_significance_tests(all_results, baseline_name="M1-B-LGBM")
 
     logger.info("步骤6：生成报告")
-    report = generate_report(all_metrics, yearly_data, quantile_data, significance_tests, configs)
+    report = generate_report(
+        all_metrics, yearly_data, quantile_data,
+        significance_tests, configs, best_vol_penalties,
+    )
 
     report_path = EXPERIMENT_DIR / "experiment4_report.md"
     with open(report_path, "w", encoding="utf-8") as f:
@@ -796,6 +923,7 @@ def main() -> None:
             "max_drawdown": _safe_float(metrics.get("max_drawdown")),
             "turnover_rate": _safe_float(metrics.get("turnover_rate")),
             "win_rate": _safe_float(metrics.get("win_rate")),
+            "best_vol_penalty": best_vol_penalties.get(name, 0.0),
         }
 
     summary_path = EXPERIMENT_DIR / "experiment4_summary.json"

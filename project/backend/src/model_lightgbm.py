@@ -35,7 +35,7 @@ DEFAULT_TUNE_LOG_PATH = MODELS_DIR / "lightgbm_optuna_trials.jsonl"
 
 RANDOM_STATE = 42
 N_OPTUNA_TRIALS = 20
-EARLY_STOPPING_ROUNDS = 100
+EARLY_STOPPING_ROUNDS = 50
 MAX_BOOST_ROUND = 2000
 _EXCLUDE_COLS = {"group_id", "group_size"}
 
@@ -228,8 +228,8 @@ def cvar_aware_relevance(
 def get_base_params() -> dict[str, Any]:
     """训练基础参数（固定随机种子 42，可复现）。
 
-    默认采用较强的正则化（lambda_l1=lambda_l2=1.0、min_child_samples=100），
-    配合 E1a 收益加权标签使用，避免 52 因子 + 62 周数据下的过拟合。
+    默认采用适度的正则化（lambda_l1=0.1、lambda_l2=0.5、min_child_samples=50、min_split_gain=0），
+    配合 E1a 收益加权标签使用，在防止过拟合的同时避免欠拟合导致 best_iteration=1。
     """
     return {
         "objective": "lambdarank",
@@ -242,10 +242,10 @@ def get_base_params() -> dict[str, Any]:
         "feature_fraction": 0.6,
         "bagging_fraction": 0.6,
         "bagging_freq": 5,
-        "min_child_samples": 150,
-        "lambda_l1": 1.0,
-        "lambda_l2": 1.0,
-        "min_split_gain": 0.05,
+        "min_child_samples": 50,
+        "lambda_l1": 0.1,
+        "lambda_l2": 0.5,
+        "min_split_gain": 0.0,
         "verbose": -1,
         "seed": RANDOM_STATE,
         "bagging_seed": RANDOM_STATE,
@@ -430,11 +430,12 @@ def tune_lightgbm(
     """
     Optuna 超参搜索：最大化验证集 ndcg@10；每 trial 使用 early_stopping_rounds 早停。
 
-    强正则化搜索空间（针对 52 因子 62 周数据严重过拟合问题）：
+    平衡正则化搜索空间（兼顾防过拟合与防欠拟合）：
     - num_leaves: 8-32（限制单树复杂度）
-    - min_child_samples: 100-500（避免过拟合小样本）
-    - lambda_l1/lambda_l2: 1.0-10.0（L1/L2 正则化）
-    - min_split_gain: 0-1（最小分裂增益）
+    - min_child_samples: 20-300（下限降低，避免欠拟合）
+    - lambda_l1: 0.0-5.0（L1 正则化，下限降低）
+    - lambda_l2: 0.0-5.0（L2 正则化，下限降低）
+    - min_split_gain: 0-0.5（最小分裂增益，范围缩小避免过度约束）
     - feature_fraction: 0.4-0.8（特征子采样）
     - bagging_fraction: 0.4-0.8（样本子采样）
     """
@@ -445,12 +446,12 @@ def tune_lightgbm(
             **base,
             "num_leaves": trial.suggest_int("num_leaves", 8, 32),
             "learning_rate": trial.suggest_float("learning_rate", 0.02, 0.08, log=True),
-            "min_child_samples": trial.suggest_int("min_child_samples", 100, 500),
+            "min_child_samples": trial.suggest_int("min_child_samples", 20, 300),
             "feature_fraction": trial.suggest_float("feature_fraction", 0.4, 0.8),
             "bagging_fraction": trial.suggest_float("bagging_fraction", 0.4, 0.8),
-            "lambda_l1": trial.suggest_float("lambda_l1", 1.0, 10.0),
-            "lambda_l2": trial.suggest_float("lambda_l2", 1.0, 10.0),
-            "min_split_gain": trial.suggest_float("min_split_gain", 0.0, 1.0),
+            "lambda_l1": trial.suggest_float("lambda_l1", 0.0, 5.0),
+            "lambda_l2": trial.suggest_float("lambda_l2", 0.0, 5.0),
+            "min_split_gain": trial.suggest_float("min_split_gain", 0.0, 0.5),
         }
         bst = train_booster(
             params,

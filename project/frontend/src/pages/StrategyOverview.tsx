@@ -56,27 +56,29 @@ function StrategyOverview() {
       axisLabel: { show: false },
       title: { fontSize: 13, color: '#86868B', offsetCenter: [0, '70%'] },
       detail: { fontSize: 28, fontWeight: 600, color: '#1D1D1F', offsetCenter: [0, '30%'], formatter: '{value}%' },
-      data: [{ value: 18.5, name: '年化收益率' }],
+      data: [{ value: 41.53, name: '年化收益率' }],
     }],
   }
 
   const datasetPieData = [
-    { name: '训练集 (2014-2019)', value: 60 },
-    { name: '验证集 (2020-2021)', value: 20 },
-    { name: '测试集 (2022-2024)', value: 20 },
+    { name: '训练集 (2014-2020)', value: 62.6 },
+    { name: '验证集 (2021-2022)', value: 19.0 },
+    { name: '测试集 (2023-2024)', value: 18.4 },
   ]
 
   const factorCategoryPieData = [
-    { name: '动量因子', value: 6 },
-    { name: '波动因子', value: 4 },
-    { name: '流动性因子', value: 3 },
-    { name: '技术指标', value: 5 },
-    { name: '估值因子', value: 2 },
+    { name: '动量因子', value: 10 },
+    { name: '波动因子', value: 8 },
+    { name: '流动性因子', value: 5 },
+    { name: '技术指标', value: 10 },
+    { name: '均线因子', value: 8 },
+    { name: '风险因子', value: 6 },
+    { name: '量价因子', value: 5 },
   ]
 
   const statsData = [
     { icon: '📅', value: '10', unit: '年+', label: '数据时间范围', sub: '2014 - 2024' },
-    { icon: '📊', value: '2,258', unit: '只', label: '股票池规模', sub: '存续A股' },
+    { icon: '📊', value: '2,589', unit: '只', label: '股票池规模', sub: '存续A股' },
     { icon: '⏱️', value: '周频', unit: '', label: '调仓频率', sub: '每周调仓' },
     { icon: '🤖', value: '双模型', unit: '', label: '预测模型', sub: 'LightGBM + XGBoost' },
   ]
@@ -241,8 +243,8 @@ function StrategyOverview() {
                 <h4 style={{ fontWeight: 600, marginBottom: '8px', fontSize: '13px', color: 'var(--color-primary)' }}>模型配置</h4>
                 <pre style={{ margin: 0, fontFamily: "'JetBrains Mono', monospace", fontSize: '12px', color: 'var(--color-text-muted)' }}>
 {`objective: lambdarank
-num_leaves: 31
-learning_rate: 0.05`}
+num_leaves: 28
+learning_rate: 0.036`}
                 </pre>
               </div>
             </div>
@@ -270,8 +272,8 @@ learning_rate: 0.05`}
                 <h4 style={{ fontWeight: 600, marginBottom: '8px', fontSize: '13px', color: 'var(--color-success)' }}>模型配置</h4>
                 <pre style={{ margin: 0, fontFamily: "'JetBrains Mono', monospace", fontSize: '12px', color: 'var(--color-text-muted)' }}>
 {`objective: rank:ndcg
-max_depth: 6
-learning_rate: 0.05`}
+max_depth: 3
+learning_rate: 0.032`}
                 </pre>
               </div>
             </div>
@@ -285,7 +287,7 @@ learning_rate: 0.05`}
           <div className="card">
             <div className="card-header">因子类别分布</div>
             <div className="card-body">
-              <PieChart data={factorCategoryPieData} donut centerLabel="因子总数" centerValue="20个" height="280px" showLegend showLabel />
+              <PieChart data={factorCategoryPieData} donut centerLabel="因子总数" centerValue="52个" height="280px" showLegend showLabel />
               <ChartDescription text="饼图展示各类因子在总因子池中的数量占比。动量因子和技术指标因子占比较大，反映了策略对价格趋势的重视。" />
             </div>
           </div>
@@ -296,11 +298,11 @@ learning_rate: 0.05`}
               <div className="data-list">
                 {[
                   { label: '时间跨度', value: '2014-01 ~ 2024-12' },
-                  { label: '股票池', value: '2,258只存续A股' },
+                  { label: '股票池', value: '2,589只存续A股' },
                   { label: '数据频率', value: '周频截面' },
-                  { label: '训练集', value: '2014-2019' },
-                  { label: '验证集', value: '2020-2021' },
-                  { label: '测试集', value: '2022-2024' },
+                  { label: '训练集', value: '2014-2020' },
+                  { label: '验证集', value: '2021-2022' },
+                  { label: '测试集', value: '2023-2024' },
                 ].map((item) => (
                   <div key={item.label} className="data-row">
                     <span className="data-label">{item.label}</span>

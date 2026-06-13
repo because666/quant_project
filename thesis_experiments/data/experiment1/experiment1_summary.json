@@ -1,41 +1,41 @@
 {
-  "generated_at": "2026-05-31T14:28:47.921788",
+  "generated_at": "2026-06-03T00:34:04.512582",
   "models": {
     "B-LGBM": {
-      "ndcg@10": 0.5154861223243759,
-      "annualized_return": 0.1405525538873249,
-      "sharpe_ratio": 0.5985442077966358,
-      "max_drawdown": 0.1678120267821569,
-      "turnover_rate": 0.9047016213703586,
-      "win_rate": 0.494949494949495,
-      "best_vol_penalty": 5.0
+      "ndcg@10": 0.5368619098997349,
+      "annualized_return": 0.04104354798890952,
+      "sharpe_ratio": 0.15756292067999547,
+      "max_drawdown": 0.16600209428876023,
+      "turnover_rate": 1.266277081036622,
+      "win_rate": 0.5060975609756098,
+      "best_vol_penalty": 1.0
     },
     "E1a-LGBM": {
-      "ndcg@10": 0.5137756576479618,
-      "annualized_return": 0.07775239489513508,
-      "sharpe_ratio": 0.2748450605293326,
-      "max_drawdown": 0.15776856672805084,
-      "turnover_rate": 0.638040258940523,
-      "win_rate": 0.43434343434343436,
-      "best_vol_penalty": 5.0
-    },
-    "E1b-LGBM": {
-      "ndcg@10": 0.5387532534906786,
-      "annualized_return": 0.020075532968290233,
-      "sharpe_ratio": -0.06055860470667889,
-      "max_drawdown": 0.19577981196706495,
-      "turnover_rate": 0.9301975914524934,
-      "win_rate": 0.46464646464646464,
+      "ndcg@10": 0.5337500409716834,
+      "annualized_return": 0.10331234362859432,
+      "sharpe_ratio": 0.545874323914477,
+      "max_drawdown": 0.10896828286138693,
+      "turnover_rate": 1.1779320432894016,
+      "win_rate": 0.5304878048780488,
       "best_vol_penalty": 3.0
     },
+    "E1b-LGBM": {
+      "ndcg@10": 0.534885555696002,
+      "annualized_return": 0.12503505357255995,
+      "sharpe_ratio": 0.6264264932946686,
+      "max_drawdown": 0.21726098088626133,
+      "turnover_rate": 1.4339123729068768,
+      "win_rate": 0.5548780487804879,
+      "best_vol_penalty": 0.3
+    },
     "E1c-LGBM": {
-      "ndcg@10": 0.5415305481363806,
-      "annualized_return": 0.04341635947271061,
-      "sharpe_ratio": 0.07708111276522278,
-      "max_drawdown": 0.23110007885210715,
-      "turnover_rate": 1.0829948927546098,
-      "win_rate": 0.47474747474747475,
-      "best_vol_penalty": 1.0
+      "ndcg@10": 0.532002173177465,
+      "annualized_return": 0.08054689739081278,
+      "sharpe_ratio": 0.382043121118688,
+      "max_drawdown": 0.13566439139044228,
+      "turnover_rate": 1.0781704906059981,
+      "win_rate": 0.5609756097560976,
+      "best_vol_penalty": 0.3
     }
   }
 }

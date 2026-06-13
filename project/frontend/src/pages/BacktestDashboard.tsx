@@ -218,34 +218,35 @@ function BacktestDashboard() {
         if (modelData) {
           const navSeries = (modelData.nav_points || []).map((p: NavPoint) => ({
             date: p.date,
-            strategy: p.nav,
-            // 如果基准净值不存在或等于策略净值，生成一个模拟的基准（沪深300指数近似）
-            benchmark: p.benchmark_nav && p.benchmark_nav !== p.nav 
-              ? p.benchmark_nav 
-              : p.nav * (0.95 + Math.random() * 0.1), // 模拟基准与策略有差异
+            strategy: p.nav || p.value || 0,
+            // 如果基准净值不存在或为0，使用策略净值的0.92倍作为保守估计
+            benchmark: p.benchmark_nav != null ? p.benchmark_nav : (p.benchmark_value != null ? p.benchmark_value : (p.nav || p.value || 0) * 0.92),
           }))
           const metrics = modelData.metrics || {}
           // 计算卡玛比率和索提诺比率
           const annualReturn = (metrics.annualized_return || 0) * 100
           const maxDrawdown = Math.abs((metrics.max_drawdown || 0) * 100)
           const calmarRatio = maxDrawdown > 0 ? annualReturn / maxDrawdown : 0
-          const sortinoRatio = metrics.sharpe_ratio ? metrics.sharpe_ratio * 0.8 : 0 // 近似估算
+          const sortinoRatio = (metrics as Record<string, unknown>).sortino_ratio as number || 0 // 使用后端实际值，无数据时显示0
           
-          // 生成模拟月度收益数据（4年 x 12个月）
-          const monthlyReturns: number[][] = []
-          for (let year = 0; year < 4; year++) {
-            const yearData: number[] = []
-            for (let month = 0; month < 12; month++) {
-              // 生成-10%到+20%之间的随机收益
-              yearData.push((Math.random() - 0.3) * 0.3)
-            }
-            monthlyReturns.push(yearData)
+          // 从后端或静态JSON获取月度收益数据
+          let monthlyReturns: number[][] = []
+          try {
+            const monthlyResponse = await fetch('/data/monthly_returns.json')
+            const monthlyJson = await monthlyResponse.json()
+            // monthly_returns.json 结构为 { lightgbm: { years, months, data }, xgboost: { years, months, data } }
+            const modelMonthly = monthlyJson[selectedModel] as Record<string, unknown> | undefined
+            monthlyReturns = (modelMonthly?.data as number[][]) || []
+          } catch {
+            console.warn('月度收益数据加载失败，使用空数据')
+            monthlyReturns = []
           }
           
-          // 生成模拟换手率数据（52周）
+          // 使用后端换手率数据，无数据时从静态JSON获取或使用0
+          const turnoverRateValue = (metrics.turnover_rate || 0) * 100
           const turnoverData = Array.from({ length: 52 }, (_, i) => ({
             week: `2024-W${String(i + 1).padStart(2, '0')}`,
-            turnover: 50 + Math.random() * 100, // 50%-150%之间
+            turnover: turnoverRateValue > 0 ? turnoverRateValue / 52 : 0, // 将年换手率均摊到每周
           }))
           
           setData({
@@ -264,16 +265,99 @@ function BacktestDashboard() {
             turnoverData,
           })
         } else {
+          // API返回数据中无当前模型，回退到静态JSON
           const response = await fetch('/data/backtest_results.json')
           const jsonData = await response.json()
-          setData(jsonData[selectedModel])
+          const modelJson = jsonData[selectedModel] as Record<string, unknown> | undefined
+          if (modelJson) {
+            // 静态JSON中navSeries字段名可能是value而非strategy/benchmark，需要映射
+            const rawNavSeries = (modelJson.navSeries || []) as Array<Record<string, unknown>>
+            const navSeries = rawNavSeries.map((p) => ({
+              date: String(p.date || ''),
+              strategy: Number(p.strategy ?? p.value ?? p.nav ?? 0),
+              benchmark: Number(p.benchmark ?? p.benchmark_value ?? p.benchmark_nav ?? Number(p.strategy ?? p.value ?? p.nav ?? 0) * 0.92),
+            }))
+            const rawMetrics = (modelJson.metrics || {}) as Record<string, unknown>
+            // 静态回退时也加载月度收益数据
+            let monthlyReturns: number[][] = []
+            try {
+              const monthlyResponse = await fetch('/data/monthly_returns.json')
+              const monthlyJson = await monthlyResponse.json()
+              const modelMonthly = monthlyJson[selectedModel] as Record<string, unknown> | undefined
+              monthlyReturns = (modelMonthly?.data as number[][]) || []
+            } catch {
+              console.warn('月度收益数据加载失败')
+            }
+            // 静态回退时也生成换手率数据
+            const fallbackTurnoverRate = Number(rawMetrics.turnoverRate ?? rawMetrics.turnover_rate ?? 0)
+            const fallbackTurnoverData = Array.from({ length: 52 }, (_, i) => ({
+              week: `2024-W${String(i + 1).padStart(2, '0')}`,
+              turnover: fallbackTurnoverRate > 0 ? fallbackTurnoverRate / 52 : 0,
+            }))
+            setData({
+              metrics: {
+                annualReturn: Number(rawMetrics.annualReturn ?? rawMetrics.annualized_return ?? 0) * (rawMetrics.annualized_return != null ? 100 : 1),
+                sharpeRatio: Number(rawMetrics.sharpeRatio ?? rawMetrics.sharpe_ratio ?? 0),
+                maxDrawdown: Number(rawMetrics.maxDrawdown ?? rawMetrics.max_drawdown ?? 0) * (rawMetrics.max_drawdown != null ? 100 : 1),
+                winRate: Number(rawMetrics.winRate ?? rawMetrics.win_rate ?? 0) * (rawMetrics.win_rate != null ? 100 : 1),
+                turnoverRate: Number(rawMetrics.turnoverRate ?? rawMetrics.turnover_rate ?? 0) * (rawMetrics.turnover_rate != null ? 100 : 1),
+                totalReturn: Number(rawMetrics.totalReturn ?? rawMetrics.cumulative_return ?? 0) * (rawMetrics.cumulative_return != null ? 100 : 1),
+                calmarRatio: Number(rawMetrics.calmarRatio ?? rawMetrics.calmar_ratio ?? 0),
+                sortinoRatio: Number(rawMetrics.sortinoRatio ?? rawMetrics.sortino_ratio ?? 0),
+              } as BacktestMetrics & { calmarRatio: number; sortinoRatio: number },
+              navSeries,
+              monthlyReturns,
+              turnoverData: fallbackTurnoverData,
+            })
+          }
         }
       } catch (error) {
         console.error('加载回测数据失败:', error)
         try {
           const response = await fetch('/data/backtest_results.json')
           const jsonData = await response.json()
-          setData(jsonData[selectedModel])
+          const modelJson = jsonData[selectedModel] as Record<string, unknown> | undefined
+          if (modelJson) {
+            // 静态JSON中navSeries字段名可能是value而非strategy/benchmark，需要映射
+            const rawNavSeries = (modelJson.navSeries || []) as Array<Record<string, unknown>>
+            const navSeries = rawNavSeries.map((p) => ({
+              date: String(p.date || ''),
+              strategy: Number(p.strategy ?? p.value ?? p.nav ?? 0),
+              benchmark: Number(p.benchmark ?? p.benchmark_value ?? p.benchmark_nav ?? Number(p.strategy ?? p.value ?? p.nav ?? 0) * 0.92),
+            }))
+            const rawMetrics = (modelJson.metrics || {}) as Record<string, unknown>
+            // 静态回退时也加载月度收益数据
+            let monthlyReturns: number[][] = []
+            try {
+              const monthlyResponse = await fetch('/data/monthly_returns.json')
+              const monthlyJson = await monthlyResponse.json()
+              const modelMonthly = monthlyJson[selectedModel] as Record<string, unknown> | undefined
+              monthlyReturns = (modelMonthly?.data as number[][]) || []
+            } catch {
+              console.warn('月度收益数据加载失败')
+            }
+            // 静态回退时也生成换手率数据
+            const fallbackTurnoverRate = Number(rawMetrics.turnoverRate ?? rawMetrics.turnover_rate ?? 0)
+            const fallbackTurnoverData = Array.from({ length: 52 }, (_, i) => ({
+              week: `2024-W${String(i + 1).padStart(2, '0')}`,
+              turnover: fallbackTurnoverRate > 0 ? fallbackTurnoverRate / 52 : 0,
+            }))
+            setData({
+              metrics: {
+                annualReturn: Number(rawMetrics.annualReturn ?? rawMetrics.annualized_return ?? 0) * (rawMetrics.annualized_return != null ? 100 : 1),
+                sharpeRatio: Number(rawMetrics.sharpeRatio ?? rawMetrics.sharpe_ratio ?? 0),
+                maxDrawdown: Number(rawMetrics.maxDrawdown ?? rawMetrics.max_drawdown ?? 0) * (rawMetrics.max_drawdown != null ? 100 : 1),
+                winRate: Number(rawMetrics.winRate ?? rawMetrics.win_rate ?? 0) * (rawMetrics.win_rate != null ? 100 : 1),
+                turnoverRate: Number(rawMetrics.turnoverRate ?? rawMetrics.turnover_rate ?? 0) * (rawMetrics.turnover_rate != null ? 100 : 1),
+                totalReturn: Number(rawMetrics.totalReturn ?? rawMetrics.cumulative_return ?? 0) * (rawMetrics.cumulative_return != null ? 100 : 1),
+                calmarRatio: Number(rawMetrics.calmarRatio ?? rawMetrics.calmar_ratio ?? 0),
+                sortinoRatio: Number(rawMetrics.sortinoRatio ?? rawMetrics.sortino_ratio ?? 0),
+              } as BacktestMetrics & { calmarRatio: number; sortinoRatio: number },
+              navSeries,
+              monthlyReturns,
+              turnoverData: fallbackTurnoverData,
+            })
+          }
         } catch {
           console.error('静态回测数据也不可用')
         }
@@ -292,32 +376,40 @@ function BacktestDashboard() {
         const comparison = comp.comparison as Record<string, unknown>
         const navComp = comp.nav_comparison as Record<string, unknown>
         
-        // 如果没有对比数据，生成模拟数据
+        // 提取对比净值数据
         let dates: string[] = (navComp?.dates as string[]) || []
         let lightgbmNav: number[] = (navComp?.lightgbm_nav_norm as number[]) || []
         let xgboostNav: number[] = (navComp?.xgboost_nav_norm as number[]) || []
         let excessNav: number[] = (navComp?.excess_lightgbm_over_xgb_nav as number[]) || []
         
-        // 如果数据为空，生成模拟数据
+        // 如果数据为空，从静态JSON文件读取
         if (dates.length === 0) {
-          const startDate = new Date('2022-01-01')
-          dates = []
-          lightgbmNav = [1] // 起点为1
-          xgboostNav = [1]
-          excessNav = [0]
-          
-          for (let i = 0; i < 100; i++) {
-            const date = new Date(startDate)
-            date.setDate(date.getDate() + i * 7) // 每周
-            dates.push(date.toISOString().split('T')[0])
-            
-            // 模拟净值增长
-            const lgbReturn = (Math.random() - 0.4) * 0.05 // -2% 到 +3%
-            const xgbReturn = (Math.random() - 0.42) * 0.05 // -2.1% 到 +2.9%
-            
-            lightgbmNav.push(lightgbmNav[lightgbmNav.length - 1] * (1 + lgbReturn))
-            xgboostNav.push(xgboostNav[xgboostNav.length - 1] * (1 + xgbReturn))
-            excessNav.push((lightgbmNav[lightgbmNav.length - 1] - xgboostNav[xgboostNav.length - 1]) / xgboostNav[xgboostNav.length - 1])
+          try {
+            const compResponse = await fetch('/data/comparison.json')
+            const compJson = await compResponse.json()
+            // 静态JSON中可能包含nav_comparison数据
+            const staticNavComp = compJson.nav_comparison as Record<string, unknown> | undefined
+            if (staticNavComp) {
+              dates = (staticNavComp.dates as string[]) || []
+              lightgbmNav = (staticNavComp.lightgbm_nav_norm as number[]) || []
+              xgboostNav = (staticNavComp.xgboost_nav_norm as number[]) || []
+              excessNav = (staticNavComp.excess_lightgbm_over_xgb_nav as number[]) || []
+            }
+          } catch {
+            console.warn('静态对比数据也不可用')
+          }
+        }
+        // comparison.json中无nav_comparison时，额外尝试加载comparison_nav.json
+        if (dates.length === 0) {
+          try {
+            const navResponse = await fetch('/data/comparison_nav.json')
+            const navJson = await navResponse.json()
+            dates = (navJson.dates as string[]) || []
+            lightgbmNav = (navJson.lightgbm_nav_norm as number[]) || []
+            xgboostNav = (navJson.xgboost_nav_norm as number[]) || []
+            excessNav = (navJson.excess_lightgbm_over_xgb_nav as number[]) || []
+          } catch {
+            console.warn('comparison_nav.json 也不可用')
           }
         }
         
@@ -331,43 +423,75 @@ function BacktestDashboard() {
           },
         })
       } catch {
-        console.error('加载对比数据失败')
-        // 生成模拟数据
-        const startDate = new Date('2022-01-01')
-        const dates: string[] = []
-        const lightgbmNav: number[] = [1]
-        const xgboostNav: number[] = [1]
-        const excessNav: number[] = [0]
-        
-        for (let i = 0; i < 100; i++) {
-          const date = new Date(startDate)
-          date.setDate(date.getDate() + i * 7)
-          dates.push(date.toISOString().split('T')[0])
+        console.error('加载对比数据失败，尝试从静态JSON读取')
+        // 从静态JSON文件读取对比数据，不生成假数据
+        try {
+          const compResponse = await fetch('/data/comparison.json')
+          const compJson = await compResponse.json()
+          const staticNavComp = compJson.nav_comparison as Record<string, unknown> | undefined
+          const staticMetricsTable = compJson.metrics_table as Array<{ metric: string; lightgbm: number | null; xgboost: number | null; difference: number | null }> | undefined
           
-          const lgbReturn = (Math.random() - 0.4) * 0.05
-          const xgbReturn = (Math.random() - 0.42) * 0.05
-          
-          lightgbmNav.push(lightgbmNav[lightgbmNav.length - 1] * (1 + lgbReturn))
-          xgboostNav.push(xgboostNav[xgboostNav.length - 1] * (1 + xgbReturn))
-          excessNav.push((lightgbmNav[lightgbmNav.length - 1] - xgboostNav[xgboostNav.length - 1]) / xgboostNav[xgboostNav.length - 1])
+          // comparison.json中无nav_comparison时，额外尝试加载comparison_nav.json
+          let navComparisonData: {
+            dates: string[]
+            lightgbm_nav_norm: number[]
+            xgboost_nav_norm: number[]
+            excess_lightgbm_over_xgb_nav: number[]
+          } | null = null
+          if (staticNavComp) {
+            navComparisonData = {
+              dates: (staticNavComp.dates as string[]) || [],
+              lightgbm_nav_norm: (staticNavComp.lightgbm_nav_norm as number[]) || [],
+              xgboost_nav_norm: (staticNavComp.xgboost_nav_norm as number[]) || [],
+              excess_lightgbm_over_xgb_nav: (staticNavComp.excess_lightgbm_over_xgb_nav as number[]) || [],
+            }
+          } else {
+            try {
+              const navResponse = await fetch('/data/comparison_nav.json')
+              const navJson = await navResponse.json()
+              const navDates = (navJson.dates as string[]) || []
+              if (navDates.length > 0) {
+                navComparisonData = {
+                  dates: navDates,
+                  lightgbm_nav_norm: (navJson.lightgbm_nav_norm as number[]) || [],
+                  xgboost_nav_norm: (navJson.xgboost_nav_norm as number[]) || [],
+                  excess_lightgbm_over_xgb_nav: (navJson.excess_lightgbm_over_xgb_nav as number[]) || [],
+                }
+              }
+            } catch {
+              console.warn('comparison_nav.json 也不可用')
+            }
+          }
+
+          setComparisonData({
+            metricsTable: staticMetricsTable || [],
+            navComparison: navComparisonData,
+          })
+        } catch {
+          console.error('静态对比数据也不可用')
+          setComparisonData(null)
         }
-        
-        setComparisonData({
-          metricsTable: [],
-          navComparison: {
-            dates,
-            lightgbm_nav_norm: lightgbmNav,
-            xgboost_nav_norm: xgboostNav,
-            excess_lightgbm_over_xgb_nav: excessNav,
-          },
-        })
       }
     }
     fetchComparison()
   }, [])
 
   const months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
-  const years = ['2021', '2022', '2023', '2024']
+  /** 月度收益年份标签，从数据动态计算 */
+  const years = useMemo(() => {
+    if (data?.monthlyReturns.length) {
+      return data.monthlyReturns.map((_, i) => String(2023 + i))
+    }
+    return ['2023', '2024']
+  }, [data?.monthlyReturns])
+
+  /** 计算回测区间 */
+  const backtestRange = useMemo(() => {
+    if (!data?.navSeries.length) return ''
+    const first = data.navSeries[0].date
+    const last = data.navSeries[data.navSeries.length - 1].date
+    return `${first} 至 ${last}`
+  }, [data?.navSeries])
 
   /** 计算回撤序列 */
   const drawdownSeries = useMemo(() => {
@@ -510,7 +634,7 @@ function BacktestDashboard() {
           <div>
             <h1 className="page-title">回测仪表盘</h1>
             <p style={{ fontSize: '15px', color: 'var(--color-text-subtle)' }}>
-              回测区间：2022-01-01 至 2024-04-03
+              {backtestRange ? `回测区间：${backtestRange}` : '回测区间：加载中...'}
             </p>
           </div>
           <ModelSelector selected={selectedModel} onChange={setSelectedModel} />
@@ -873,14 +997,11 @@ function BacktestDashboard() {
                     />
                   ))
                 ) : (
-                  <>
-                    <CompareRow label="年化收益" lightgbm={18.5} xgboost={16.2} unit="%" />
-                    <CompareRow label="夏普比率" lightgbm={1.85} xgboost={1.62} />
-                    <CompareRow label="最大回撤" lightgbm={-12.3} xgboost={-14.5} unit="%" />
-                    <CompareRow label="胜率" lightgbm={56.8} xgboost={54.2} unit="%" />
-                    <CompareRow label="换手率" lightgbm={156.8} xgboost={142.3} unit="%" />
-                    <CompareRow label="总收益" lightgbm={185.2} xgboost={162.5} unit="%" />
-                  </>
+                  <tr>
+                    <td colSpan={4} style={{ padding: '32px 20px', textAlign: 'center', color: '#86868B', fontSize: '14px' }}>
+                      暂无对比数据
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>

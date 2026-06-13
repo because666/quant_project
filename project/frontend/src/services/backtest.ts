@@ -29,7 +29,11 @@ export interface BacktestResultItem {
 export interface NavPoint {
   date: string
   nav: number
+  /** 静态JSON中的策略净值字段名 */
+  value?: number
   benchmark_nav?: number
+  /** 静态JSON中的基准净值字段名 */
+  benchmark_value?: number
 }
 
 /** 最新回测数据 */

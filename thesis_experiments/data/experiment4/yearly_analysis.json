@@ -1,50 +1,90 @@
 {
   "M1-B-LGBM": {
     "2023": {
-      "annualized_return": -0.6623351082445668,
-      "sharpe_ratio": -3.6524356812380963,
-      "max_drawdown": 0.25354607431120135
+      "annualized_return": -0.1164855133460223,
+      "sharpe_ratio": -0.754684097655554,
+      "max_drawdown": 0.12884138368647902
     },
     "2024": {
-      "annualized_return": 7.4987070588391145,
-      "sharpe_ratio": 3.68832151695979,
-      "max_drawdown": 0.14385178900311435
+      "annualized_return": 0.6439897633271034,
+      "sharpe_ratio": 1.0138539380770246,
+      "max_drawdown": 0.16600209428876023
+    },
+    "2025": {
+      "annualized_return": 0.5128958709639233,
+      "sharpe_ratio": 1.4054046931713702,
+      "max_drawdown": 0.07516094164562193
+    },
+    "2026": {
+      "annualized_return": -0.6012245556365906,
+      "sharpe_ratio": -2.1701472170260936,
+      "max_drawdown": 0.0922320006370233
     }
   },
   "M2-B-XGB": {
     "2023": {
-      "annualized_return": 0.7743277896008152,
-      "sharpe_ratio": 2.065582354087904,
-      "max_drawdown": 0.08362274733961861
+      "annualized_return": 0.009130497088595702,
+      "sharpe_ratio": -0.07942016163705898,
+      "max_drawdown": 0.12856792697928776
     },
     "2024": {
-      "annualized_return": -0.17916923193176715,
-      "sharpe_ratio": -0.34044485329367175,
-      "max_drawdown": 0.28153892979004536
+      "annualized_return": -0.6259128013920228,
+      "sharpe_ratio": -1.31308635698105,
+      "max_drawdown": 0.28801595021663773
+    },
+    "2025": {
+      "annualized_return": 2.9917562843372565,
+      "sharpe_ratio": 3.656852188243741,
+      "max_drawdown": 0.06973051382908069
+    },
+    "2026": {
+      "annualized_return": -0.8141038965533662,
+      "sharpe_ratio": -6.2425913234723645,
+      "max_drawdown": 0.08107327075952231
     }
   },
   "M3-E1b-RRF": {
     "2023": {
-      "annualized_return": 0.23823431387933414,
-      "sharpe_ratio": 0.789620146409462,
-      "max_drawdown": 0.05966550464506881
+      "annualized_return": -0.1720138847497087,
+      "sharpe_ratio": -0.9711630872029645,
+      "max_drawdown": 0.11477681965416764
     },
     "2024": {
-      "annualized_return": -0.44251829550066846,
-      "sharpe_ratio": -0.9774143878500046,
-      "max_drawdown": 0.29934319478450955
+      "annualized_return": 0.38462609279180304,
+      "sharpe_ratio": 0.5963698729796953,
+      "max_drawdown": 0.18292098075874752
+    },
+    "2025": {
+      "annualized_return": 2.3160664362613157,
+      "sharpe_ratio": 3.5893585207450633,
+      "max_drawdown": 0.05735070064547032
+    },
+    "2026": {
+      "annualized_return": -0.34172914576655455,
+      "sharpe_ratio": -0.9737587178416776,
+      "max_drawdown": 0.09145939874833875
     }
   },
   "M4-E1a-AVG": {
     "2023": {
-      "annualized_return": 0.0251638231341762,
-      "sharpe_ratio": -0.0171306136625497,
-      "max_drawdown": 0.10767265002462245
+      "annualized_return": -0.09277458905008862,
+      "sharpe_ratio": -0.5395415528985544,
+      "max_drawdown": 0.10497055393710086
     },
     "2024": {
-      "annualized_return": 1.7119727600499268,
-      "sharpe_ratio": 1.8679500070136423,
-      "max_drawdown": 0.12393890976373301
+      "annualized_return": 0.1855308121079433,
+      "sharpe_ratio": 0.21164437802397895,
+      "max_drawdown": 0.1984165180926183
+    },
+    "2025": {
+      "annualized_return": 0.6757407471464929,
+      "sharpe_ratio": 1.59664217624774,
+      "max_drawdown": 0.07822828536502868
+    },
+    "2026": {
+      "annualized_return": 0.5409399805112074,
+      "sharpe_ratio": 1.2915100083912872,
+      "max_drawdown": 0.034415693169136174
     }
   }
 }

@@ -82,6 +82,7 @@ def run_single_backtest(
     *,
     vol_penalty: float = 1.0,
     model_type: str = "lightgbm",
+    data_dir: Path | None = None,
 ) -> tuple[pd.DataFrame, dict[str, Any]]:
     """
     使用指定预测器和参数运行单次回测。
@@ -92,6 +93,7 @@ def run_single_backtest(
         weekly_df: 已加载的周频截面数据
         vol_penalty: 波动率惩罚系数
         model_type: BacktestEngine的model_type参数
+        data_dir: 数据目录路径，为None时使用BacktestEngine内部默认路径
 
     返回:
         (回测结果DataFrame, 回测指标字典)；结果为空时指标字典为空
@@ -103,6 +105,7 @@ def run_single_backtest(
         initial_capital=INITIAL_CAPITAL,
         vol_penalty=vol_penalty,
         custom_predictor=predictor,
+        data_dir=data_dir,
     )
     result_df = engine.run_backtest(weekly_df, use_split="test")
 
@@ -134,6 +137,7 @@ def search_optimal_vol_penalty(
     *,
     model_type: str = "lightgbm",
     grid: list[float] | None = None,
+    data_dir: Path | None = None,
 ) -> tuple[float, dict[str, Any], pd.DataFrame]:
     """
     搜索最优vol_penalty参数（以夏普比率为优化目标）。
@@ -144,6 +148,7 @@ def search_optimal_vol_penalty(
         weekly_df: 周频截面数据
         model_type: BacktestEngine的model_type
         grid: vol_penalty搜索网格，默认VOL_PENALTY_GRID
+        data_dir: 数据目录路径，为None时使用BacktestEngine内部默认路径
 
     返回:
         (最优vol_penalty, 最优指标字典, 最优回测结果DataFrame)
@@ -166,6 +171,7 @@ def search_optimal_vol_penalty(
                 weekly_df,
                 vol_penalty=vp,
                 model_type=model_type,
+                data_dir=data_dir,
             )
         except Exception as exc:
             logger.error("%s (vp=%.1f) 回测异常: %s", name, vp, exc)
@@ -198,11 +204,11 @@ def train_stacking_meta_learner() -> tuple[Any, dict[str, Any]]:
     val_X, val_y, val_groups = load_validation_data(fill_missing=True)
 
     logger.info("获取LightGBM验证集预测（%d样本）...", len(val_y))
-    lgbm_pred = ModelPredictor("lightgbm")
+    lgbm_pred = ModelPredictor("lightgbm", data_dir=data_dir)
     lgbm_val_scores = get_raw_scores(lgbm_pred, val_X)
 
     logger.info("获取XGBoost验证集预测...")
-    xgb_pred = ModelPredictor("xgboost")
+    xgb_pred = ModelPredictor("xgboost", data_dir=data_dir)
     xgb_val_scores = get_raw_scores(xgb_pred, val_X)
 
     logger.info("训练Ridge元学习器...")
@@ -455,6 +461,13 @@ def main() -> None:
     7. 保存回测结果和指标
     8. 生成对比报告
     """
+    import argparse
+    parser = argparse.ArgumentParser(description="实验2：多模型排序融合对比")
+    parser.add_argument("--data-dir", type=str, default=None, help="数据目录（默认data/）")
+    args = parser.parse_args()
+
+    data_dir = Path(args.data_dir) if args.data_dir else None
+
     EXPERIMENT_DIR.mkdir(parents=True, exist_ok=True)
 
     logger.info("=" * 60)
@@ -479,7 +492,7 @@ def main() -> None:
     logger.info("=" * 60)
     logger.info("步骤3：加载周频数据")
     logger.info("=" * 60)
-    base_engine = BacktestEngine("lightgbm", top_n=TOP_N, initial_capital=INITIAL_CAPITAL)
+    base_engine = BacktestEngine("lightgbm", top_n=TOP_N, initial_capital=INITIAL_CAPITAL, data_dir=data_dir)
     weekly_df = base_engine.load_weekly_data()
     logger.info("周频数据加载完成: %d行, %d列", len(weekly_df), len(weekly_df.columns))
 
@@ -493,9 +506,9 @@ def main() -> None:
 
     try:
         logger.info("--- B-LGBM (vp=1.0) ---")
-        pred_lgbm = ModelPredictor("lightgbm")
+        pred_lgbm = ModelPredictor("lightgbm", data_dir=data_dir)
         result_lgbm, m_lgbm = run_single_backtest(
-            "B-LGBM", pred_lgbm, weekly_df, vol_penalty=1.0, model_type="lightgbm",
+            "B-LGBM", pred_lgbm, weekly_df, vol_penalty=1.0, model_type="lightgbm", data_dir=data_dir,
         )
         all_metrics["B-LGBM"] = m_lgbm
         all_best_vp["B-LGBM"] = 1.0
@@ -505,9 +518,9 @@ def main() -> None:
 
     try:
         logger.info("--- B-XGB (vp=0.5) ---")
-        pred_xgb = ModelPredictor("xgboost")
+        pred_xgb = ModelPredictor("xgboost", data_dir=data_dir)
         result_xgb, m_xgb = run_single_backtest(
-            "B-XGB", pred_xgb, weekly_df, vol_penalty=0.5, model_type="xgboost",
+            "B-XGB", pred_xgb, weekly_df, vol_penalty=0.5, model_type="xgboost", data_dir=data_dir,
         )
         all_metrics["B-XGB"] = m_xgb
         all_best_vp["B-XGB"] = 0.5
@@ -521,9 +534,9 @@ def main() -> None:
 
     try:
         logger.info("--- E2a: 分数平均融合 ---")
-        fp_e2a = FusionPredictor("average", ["lightgbm", "xgboost"])
+        fp_e2a = FusionPredictor("average", ["lightgbm", "xgboost"], data_dir=data_dir)
         result_e2a, m_e2a = run_single_backtest(
-            "E2a", fp_e2a, weekly_df, vol_penalty=1.0, model_type="lightgbm",
+            "E2a", fp_e2a, weekly_df, vol_penalty=1.0, model_type="lightgbm", data_dir=data_dir,
         )
         all_metrics["E2a"] = m_e2a
         all_best_vp["E2a"] = 1.0
@@ -533,9 +546,9 @@ def main() -> None:
 
     try:
         logger.info("--- E2b: RRF融合 (k=60) ---")
-        fp_e2b = FusionPredictor("rrf", ["lightgbm", "xgboost"], k=60)
+        fp_e2b = FusionPredictor("rrf", ["lightgbm", "xgboost"], k=60, data_dir=data_dir)
         result_e2b, m_e2b = run_single_backtest(
-            "E2b", fp_e2b, weekly_df, vol_penalty=1.0, model_type="lightgbm",
+            "E2b", fp_e2b, weekly_df, vol_penalty=1.0, model_type="lightgbm", data_dir=data_dir,
         )
         all_metrics["E2b"] = m_e2b
         all_best_vp["E2b"] = 1.0
@@ -546,9 +559,9 @@ def main() -> None:
     try:
         logger.info("--- E2c: Stacking融合 ---")
         if ridge_model is not None:
-            fp_e2c = FusionPredictor("stacking", ["lightgbm", "xgboost"], ridge_model=ridge_model)
+            fp_e2c = FusionPredictor("stacking", ["lightgbm", "xgboost"], ridge_model=ridge_model, data_dir=data_dir)
             result_e2c, m_e2c = run_single_backtest(
-                "E2c", fp_e2c, weekly_df, vol_penalty=1.0, model_type="lightgbm",
+                "E2c", fp_e2c, weekly_df, vol_penalty=1.0, model_type="lightgbm", data_dir=data_dir,
             )
             all_metrics["E2c"] = m_e2c
             all_best_vp["E2c"] = 1.0
@@ -560,9 +573,9 @@ def main() -> None:
 
     try:
         logger.info("--- E2d: 加权RRF融合 ---")
-        fp_e2d = FusionPredictor("weighted_rrf", ["lightgbm", "xgboost"], k=60, weights=ndcg_weights)
+        fp_e2d = FusionPredictor("weighted_rrf", ["lightgbm", "xgboost"], k=60, weights=ndcg_weights, data_dir=data_dir)
         result_e2d, m_e2d = run_single_backtest(
-            "E2d", fp_e2d, weekly_df, vol_penalty=1.0, model_type="lightgbm",
+            "E2d", fp_e2d, weekly_df, vol_penalty=1.0, model_type="lightgbm", data_dir=data_dir,
         )
         all_metrics["E2d"] = m_e2d
         all_best_vp["E2d"] = 1.0
@@ -577,7 +590,7 @@ def main() -> None:
     fusion_predictors: dict[str, dict[str, Any]] = {}
     try:
         fusion_predictors["E2a"] = {
-            "predictor": FusionPredictor("average", ["lightgbm", "xgboost"]),
+            "predictor": FusionPredictor("average", ["lightgbm", "xgboost"], data_dir=data_dir),
             "model_type": "lightgbm",
         }
     except Exception as exc:
@@ -585,7 +598,7 @@ def main() -> None:
 
     try:
         fusion_predictors["E2b"] = {
-            "predictor": FusionPredictor("rrf", ["lightgbm", "xgboost"], k=60),
+            "predictor": FusionPredictor("rrf", ["lightgbm", "xgboost"], k=60, data_dir=data_dir),
             "model_type": "lightgbm",
         }
     except Exception as exc:
@@ -594,7 +607,7 @@ def main() -> None:
     try:
         if ridge_model is not None:
             fusion_predictors["E2c"] = {
-                "predictor": FusionPredictor("stacking", ["lightgbm", "xgboost"], ridge_model=ridge_model),
+                "predictor": FusionPredictor("stacking", ["lightgbm", "xgboost"], ridge_model=ridge_model, data_dir=data_dir),
                 "model_type": "lightgbm",
             }
     except Exception as exc:
@@ -602,7 +615,7 @@ def main() -> None:
 
     try:
         fusion_predictors["E2d"] = {
-            "predictor": FusionPredictor("weighted_rrf", ["lightgbm", "xgboost"], k=60, weights=ndcg_weights),
+            "predictor": FusionPredictor("weighted_rrf", ["lightgbm", "xgboost"], k=60, weights=ndcg_weights, data_dir=data_dir),
             "model_type": "lightgbm",
         }
     except Exception as exc:
@@ -616,6 +629,7 @@ def main() -> None:
                 cfg["predictor"],
                 weekly_df,
                 model_type=cfg["model_type"],
+                data_dir=data_dir,
             )
             all_best_vp[name] = best_vp
             all_metrics[name] = best_metrics

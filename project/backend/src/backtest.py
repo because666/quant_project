@@ -1183,16 +1183,36 @@ def compute_backtest_metrics(
     try:
         weekly_returns = result_df["weekly_return"].dropna().to_numpy(dtype=np.float64) if "weekly_return" in result_df.columns else np.array([], dtype=np.float64)
         if weekly_returns.size >= 10:
-            from .metrics import bootstrap_metric, sharpe_ratio as _sharpe_fn, annualized_return as _ar_fn
+            from .metrics import bootstrap_metric
+
+            def _annualized_from_weekly(r: np.ndarray) -> float:
+                """从周度收益率直接计算年化收益率：(1+均值)^52 - 1。"""
+                r_clean = r[~np.isnan(r)]
+                if r_clean.size < 2:
+                    return float("nan")
+                return float((1.0 + np.mean(r_clean)) ** 52 - 1.0)
+
+            def _sharpe_from_weekly(r: np.ndarray, risk_free_rate: float = 0.03) -> float:
+                """从周度收益率直接计算年化夏普比率。"""
+                r_clean = r[~np.isnan(r)]
+                if r_clean.size < 3:
+                    return float("nan")
+                weekly_rf = (1.0 + risk_free_rate) ** (1.0 / 52.0) - 1.0
+                excess = r_clean - weekly_rf
+                std_excess = float(np.std(excess, ddof=1))
+                if std_excess < 1e-10:
+                    return 0.0
+                return float(np.mean(excess) / std_excess * np.sqrt(52.0))
+
             m["sharpe_ci"] = bootstrap_metric(
                 weekly_returns,
-                lambda r: _sharpe_fn(pd.Series(r, index=pd.date_range("2020-01-01", periods=len(r), freq="B")), risk_free_rate=0.03),
+                lambda r: _sharpe_from_weekly(r, risk_free_rate=0.03),
                 n_bootstrap=1000,
                 confidence=0.95,
             )
             m["annualized_return_ci"] = bootstrap_metric(
                 weekly_returns,
-                lambda r: _ar_fn(pd.Series(r, index=pd.date_range("2020-01-01", periods=len(r), freq="B"))),
+                _annualized_from_weekly,
                 n_bootstrap=1000,
                 confidence=0.95,
             )

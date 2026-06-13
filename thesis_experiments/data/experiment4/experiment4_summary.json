@@ -1,33 +1,37 @@
 {
-  "generated_at": "2026-05-31T14:29:56.634283",
+  "generated_at": "2026-06-03T00:50:36.895195",
   "methods": {
     "M1-B-LGBM": {
-      "annualized_return": 0.09258716914259213,
-      "sharpe_ratio": 0.2872835471433293,
-      "max_drawdown": 0.264084835276595,
-      "turnover_rate": 1.2032764493675547,
-      "win_rate": 0.45454545454545453
+      "annualized_return": 0.04104354798890952,
+      "sharpe_ratio": 0.15756292067999547,
+      "max_drawdown": 0.16600209428876023,
+      "turnover_rate": 1.266277081036622,
+      "win_rate": 0.5060975609756098,
+      "best_vol_penalty": 1.0
     },
     "M2-B-XGB": {
-      "annualized_return": 0.03419741313008484,
-      "sharpe_ratio": 0.018445641860838195,
-      "max_drawdown": 0.28153892979004536,
-      "turnover_rate": 1.4983921524157067,
-      "win_rate": 0.494949494949495
+      "annualized_return": 0.007948770869680377,
+      "sharpe_ratio": 0.021538491773223777,
+      "max_drawdown": 0.3159194826040226,
+      "turnover_rate": 1.32232809180408,
+      "win_rate": 0.4878048780487805,
+      "best_vol_penalty": 0.0
     },
     "M3-E1b-RRF": {
-      "annualized_return": -0.04011488746838876,
-      "sharpe_ratio": -0.34187198383185546,
-      "max_drawdown": 0.3260453169710835,
-      "turnover_rate": 1.254108199803139,
-      "win_rate": 0.5050505050505051
+      "annualized_return": 0.07607429263138843,
+      "sharpe_ratio": 0.3637024705138289,
+      "max_drawdown": 0.18292098075874752,
+      "turnover_rate": 1.4211424684124472,
+      "win_rate": 0.5121951219512195,
+      "best_vol_penalty": 0.0
     },
     "M4-E1a-AVG": {
-      "annualized_return": 0.09009420768141863,
-      "sharpe_ratio": 0.31172511461044106,
-      "max_drawdown": 0.15824726551289647,
-      "turnover_rate": 1.1948407682542617,
-      "win_rate": 0.46464646464646464
+      "annualized_return": 0.04009979959190013,
+      "sharpe_ratio": 0.15776785764510393,
+      "max_drawdown": 0.28415789705325467,
+      "turnover_rate": 1.5082643724099998,
+      "win_rate": 0.5304878048780488,
+      "best_vol_penalty": 0.3
     }
   }
 }

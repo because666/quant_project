@@ -53,7 +53,7 @@ def step1_train_models(skip_train: bool) -> None:
     logger.info("XGBoost训练完成")
 
 
-def step2_run_model_backtest(top_n: int) -> dict[str, dict[str, Any]]:
+def step2_run_model_backtest(top_n: int, data_dir: Path | None = None) -> dict[str, dict[str, Any]]:
     """第2步：双模型回测。"""
     results: dict[str, dict[str, Any]] = {}
 
@@ -63,7 +63,7 @@ def step2_run_model_backtest(top_n: int) -> dict[str, dict[str, Any]]:
         logger.info("=" * 60)
 
         from src.backtest import BacktestEngine, compute_backtest_metrics
-        eng = BacktestEngine(model_type, top_n, 1_000_000.0)
+        eng = BacktestEngine(model_type, top_n, 1_000_000.0, data_dir=data_dir)
         weekly_df = eng.load_weekly_data()
         result_df = eng.run_backtest(weekly_df, use_split="test")
 
@@ -86,14 +86,14 @@ def step2_run_model_backtest(top_n: int) -> dict[str, dict[str, Any]]:
     return results
 
 
-def step3_run_random_baseline(top_n: int, n_runs: int) -> dict[str, Any]:
+def step3_run_random_baseline(top_n: int, n_runs: int, data_dir: Path | None = None) -> dict[str, Any]:
     """第3步：B-EW等权随机选股基线。"""
     logger.info("=" * 60)
     logger.info("第4步：B-EW随机选股基线 (top_n=%d, n_runs=%d)", top_n, n_runs)
     logger.info("=" * 60)
 
     from src.backtest import run_random_baseline
-    result = run_random_baseline(top_n=top_n, n_runs=n_runs)
+    result = run_random_baseline(top_n=top_n, n_runs=n_runs, data_dir=data_dir)
 
     logger.info(
         "B-EW: 年化收益=%.2f%%, 夏普=%.3f, 最大回撤=%.2f%%",
@@ -104,14 +104,14 @@ def step3_run_random_baseline(top_n: int, n_runs: int) -> dict[str, Any]:
     return result
 
 
-def step4_run_momentum_baseline(top_n: int) -> pd.DataFrame:
+def step4_run_momentum_baseline(top_n: int, data_dir: Path | None = None) -> pd.DataFrame:
     """第4步：B-MOM纯动量排序基线。"""
     logger.info("=" * 60)
     logger.info("第5步：B-MOM动量排序基线 (top_n=%d)", top_n)
     logger.info("=" * 60)
 
     from src.backtest import run_momentum_baseline
-    result_df = run_momentum_baseline(top_n=top_n)
+    result_df = run_momentum_baseline(top_n=top_n, data_dir=data_dir)
 
     if not result_df.empty:
         nav = result_df["nav"]
@@ -362,7 +362,10 @@ def main() -> None:
     parser.add_argument("--skip-train", action="store_true", help="跳过模型训练")
     parser.add_argument("--top-n", type=int, default=20, help="选股数量")
     parser.add_argument("--n-runs", type=int, default=100, help="B-EW随机基线运行次数")
+    parser.add_argument("--data-dir", type=str, default=None, help="数据目录（默认data/）")
     args = parser.parse_args()
+
+    data_dir = Path(args.data_dir) if args.data_dir else None
 
     BASELINE_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -370,13 +373,13 @@ def main() -> None:
     step1_train_models(args.skip_train)
 
     # 第2步：双模型回测
-    model_results = step2_run_model_backtest(args.top_n)
+    model_results = step2_run_model_backtest(args.top_n, data_dir=data_dir)
 
     # 第3步：B-EW随机基线
-    ew_result = step3_run_random_baseline(args.top_n, args.n_runs)
+    ew_result = step3_run_random_baseline(args.top_n, args.n_runs, data_dir=data_dir)
 
     # 第4步：B-MOM动量基线
-    mom_df = step4_run_momentum_baseline(args.top_n)
+    mom_df = step4_run_momentum_baseline(args.top_n, data_dir=data_dir)
 
     # 第5步：生成报告
     logger.info("=" * 60)

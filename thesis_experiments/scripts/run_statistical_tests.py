@@ -198,12 +198,13 @@ def get_method_configs() -> dict[str, dict[str, Any]]:
     }
 
 
-def create_predictor(config: dict[str, Any]) -> ModelPredictor | FusionPredictor:
+def create_predictor(config: dict[str, Any], data_dir: Path | None = None) -> ModelPredictor | FusionPredictor:
     """
     根据方法配置创建预测器实例。
 
     参数:
         config: 方法配置字典
+        data_dir: 数据目录路径，为None时使用ModelPredictor内部默认路径
 
     返回:
         ModelPredictor或FusionPredictor实例
@@ -212,12 +213,13 @@ def create_predictor(config: dict[str, Any]) -> ModelPredictor | FusionPredictor
         return ModelPredictor(
             model_type=config["model_type"],
             model_path=config["model_path"],
+            data_dir=data_dir,
         )
     elif config["predictor_type"] == "fusion":
         sub_predictors: list[ModelPredictor] = []
         for mt, mp in zip(config["model_types"], config["model_paths"]):
             actual_type = "lightgbm" if "lightgbm" in mt else "xgboost"
-            sub_predictors.append(ModelPredictor(model_type=actual_type, model_path=mp))
+            sub_predictors.append(ModelPredictor(model_type=actual_type, model_path=mp, data_dir=data_dir))
 
         fp = FusionPredictor(
             fusion_type=config["fusion_strategy"],
@@ -234,6 +236,7 @@ def create_predictor(config: dict[str, Any]) -> ModelPredictor | FusionPredictor
 def run_all_backtests(
     configs: dict[str, dict[str, Any]],
     weekly_df: pd.DataFrame,
+    data_dir: Path | None = None,
 ) -> dict[str, tuple[pd.DataFrame, dict[str, Any]]]:
     """
     对所有方法运行回测。
@@ -241,6 +244,7 @@ def run_all_backtests(
     参数:
         configs: 方法配置字典
         weekly_df: 周频数据
+        data_dir: 数据目录路径，为None时使用BacktestEngine内部默认路径
 
     返回:
         方法名到(回测结果DataFrame, 回测指标字典)的映射
@@ -257,7 +261,7 @@ def run_all_backtests(
                 for i, mp in enumerate(config.get("model_paths", [])):
                     logger.info("  子模型[%d]: %s, SHA256前8位: %s", i, mp, _model_hash(mp))
 
-            predictor = create_predictor(config)
+            predictor = create_predictor(config, data_dir=data_dir)
             vol_penalty = config.get("vol_penalty", 0.0)
 
             engine = BacktestEngine(
@@ -266,6 +270,7 @@ def run_all_backtests(
                 initial_capital=INITIAL_CAPITAL,
                 vol_penalty=vol_penalty,
                 custom_predictor=predictor,
+                data_dir=data_dir,
             )
 
             result_df = engine.run_backtest(
@@ -279,9 +284,9 @@ def run_all_backtests(
 
             logger.info(
                 "  年化=%.2f%%, 夏普=%.4f, 回撤=%.2f%%",
-                metrics["annualized_return"] * 100,
-                metrics["sharpe_ratio"],
-                metrics["max_drawdown"] * 100,
+                _safe_float(metrics.get("annualized_return")) * 100,
+                _safe_float(metrics.get("sharpe_ratio")),
+                _safe_float(metrics.get("max_drawdown")) * 100,
             )
         except Exception as exc:
             logger.error("回测失败: %s, 原因: %s", name, exc)
@@ -347,9 +352,9 @@ def run_bootstrap_ci(
         logger.info(
             "Bootstrap CI: %s, 夏普=%.4f [%.4f, %.4f]（统一口径）",
             name,
-            metrics.get("sharpe_ratio", 0),
-            sharpe_ci.get("lower", 0),
-            sharpe_ci.get("upper", 0),
+            _safe_float(metrics.get("sharpe_ratio")),
+            _safe_float(sharpe_ci.get("lower", 0)),
+            _safe_float(sharpe_ci.get("upper", 0)),
         )
 
     return ci_data
@@ -425,7 +430,7 @@ def run_deflated_sharpe(
             continue
 
         returns = result_df["weekly_return"].dropna().values
-        sr = metrics.get("sharpe_ratio", 0)
+        sr = _safe_float(metrics.get("sharpe_ratio"))
         skew = float(stats.skew(returns))
         kurt = float(stats.kurtosis(returns))
         n_obs = len(returns)
@@ -454,6 +459,7 @@ def run_deflated_sharpe(
 def run_topn_sensitivity(
     weekly_df: pd.DataFrame,
     top_n_list: list[int] | None = None,
+    data_dir: Path | None = None,
 ) -> dict[str, dict[int, dict[str, Any]]]:
     """
     Top N参数敏感性分析。
@@ -463,6 +469,7 @@ def run_topn_sensitivity(
     参数:
         weekly_df: 周频数据
         top_n_list: Top N测试列表
+        data_dir: 数据目录路径，为None时使用BacktestEngine内部默认路径
 
     返回:
         方法名到{TopN: 指标字典}的映射
@@ -480,7 +487,7 @@ def run_topn_sensitivity(
         logger.info("Top N敏感性: %s", name)
         sensitivity[name] = {}
 
-        predictor = create_predictor(config)
+        predictor = create_predictor(config, data_dir=data_dir)
         vol_penalty = config.get("vol_penalty", 0.0)
 
         for top_n in top_n_list:
@@ -491,6 +498,7 @@ def run_topn_sensitivity(
                     initial_capital=INITIAL_CAPITAL,
                     vol_penalty=vol_penalty,
                     custom_predictor=predictor,
+                    data_dir=data_dir,
                 )
 
                 result_df = engine.run_backtest(weekly_df, predictor=predictor, use_split="test")
@@ -518,6 +526,7 @@ def run_topn_sensitivity(
 def run_holding_period_sensitivity(
     weekly_df: pd.DataFrame,
     holding_periods: list[int] | None = None,
+    data_dir: Path | None = None,
 ) -> dict[str, dict[int, dict[str, Any]]]:
     """
     持有期敏感性分析。
@@ -528,6 +537,7 @@ def run_holding_period_sensitivity(
     参数:
         weekly_df: 周频数据
         holding_periods: 持有期列表（单位：周）
+        data_dir: 数据目录路径，为None时使用BacktestEngine内部默认路径
 
     返回:
         方法名到{持有期: 指标字典}的映射
@@ -546,7 +556,7 @@ def run_holding_period_sensitivity(
         sensitivity[name] = {}
 
         vol_penalty = config.get("vol_penalty", 0.0)
-        predictor = create_predictor(config)
+        predictor = create_predictor(config, data_dir=data_dir)
 
         for period in holding_periods:
             try:
@@ -557,6 +567,7 @@ def run_holding_period_sensitivity(
                     vol_penalty=vol_penalty,
                     rebalance_freq=period,
                     custom_predictor=predictor,
+                    data_dir=data_dir,
                 )
 
                 result_df = engine.run_backtest(weekly_df, predictor=predictor, use_split="test")
@@ -589,6 +600,7 @@ def run_holding_period_sensitivity(
 def run_rrf_k_sensitivity(
     weekly_df: pd.DataFrame,
     k_list: list[int] | None = None,
+    data_dir: Path | None = None,
 ) -> dict[int, dict[str, Any]]:
     """
     RRF平滑常数k敏感性分析。
@@ -598,6 +610,7 @@ def run_rrf_k_sensitivity(
     参数:
         weekly_df: 周频数据
         k_list: k值测试列表
+        data_dir: 数据目录路径，为None时使用BacktestEngine内部默认路径
 
     返回:
         k值到指标字典的映射
@@ -610,8 +623,8 @@ def run_rrf_k_sensitivity(
     for k in k_list:
         logger.info("RRF k敏感性: k=%d", k)
         try:
-            lgb_pred = ModelPredictor(model_type="lightgbm", model_path=MODELS_DIR / "lightgbm.pkl")
-            xgb_pred = ModelPredictor(model_type="xgboost", model_path=MODELS_DIR / "xgboost.json")
+            lgb_pred = ModelPredictor(model_type="lightgbm", model_path=MODELS_DIR / "lightgbm.pkl", data_dir=data_dir)
+            xgb_pred = ModelPredictor(model_type="xgboost", model_path=MODELS_DIR / "xgboost.json", data_dir=data_dir)
 
             fp = FusionPredictor(fusion_type="rrf", model_types=["lightgbm", "xgboost"], k=k)
             fp._predictors = [lgb_pred, xgb_pred]
@@ -623,6 +636,7 @@ def run_rrf_k_sensitivity(
                 initial_capital=INITIAL_CAPITAL,
                 vol_penalty=0.7,
                 custom_predictor=fp,
+                data_dir=data_dir,
             )
 
             result_df = engine.run_backtest(weekly_df, predictor=fp, use_split="test")
@@ -838,6 +852,13 @@ def generate_report(
 
 def main() -> None:
     """统计检验+稳健性检验主函数。"""
+    import argparse
+    parser = argparse.ArgumentParser(description="统计检验 + 稳健性检验")
+    parser.add_argument("--data-dir", type=str, default=None, help="数据目录（默认data/）")
+    args = parser.parse_args()
+
+    data_dir = Path(args.data_dir) if args.data_dir else None
+
     logger.info("=" * 60)
     logger.info("统计检验 + 稳健性检验")
     logger.info("=" * 60)
@@ -845,12 +866,12 @@ def main() -> None:
     configs = get_method_configs()
 
     logger.info("步骤1：加载测试数据")
-    engine = BacktestEngine(model_type="lightgbm", top_n=TOP_N, initial_capital=INITIAL_CAPITAL)
+    engine = BacktestEngine(model_type="lightgbm", top_n=TOP_N, initial_capital=INITIAL_CAPITAL, data_dir=data_dir)
     weekly_df = engine.load_weekly_data(concat_splits=True)
     logger.info("数据加载完成: %d行", len(weekly_df))
 
     logger.info("步骤2：运行所有方法回测")
-    all_results = run_all_backtests(configs, weekly_df)
+    all_results = run_all_backtests(configs, weekly_df, data_dir=data_dir)
     logger.info("回测完成: %d个方法", len(all_results))
 
     logger.info("步骤3：Bootstrap置信区间")
@@ -864,13 +885,13 @@ def main() -> None:
     dsr_data = run_deflated_sharpe(all_results, n_trials=n_trials)
 
     logger.info("步骤6：Top N参数敏感性")
-    topn_sens = run_topn_sensitivity(weekly_df)
+    topn_sens = run_topn_sensitivity(weekly_df, data_dir=data_dir)
 
     logger.info("步骤7：持有期敏感性")
-    holding_sens = run_holding_period_sensitivity(weekly_df)
+    holding_sens = run_holding_period_sensitivity(weekly_df, data_dir=data_dir)
 
     logger.info("步骤8：RRF k敏感性")
-    rrf_k_sens = run_rrf_k_sensitivity(weekly_df)
+    rrf_k_sens = run_rrf_k_sensitivity(weekly_df, data_dir=data_dir)
 
     logger.info("步骤9：生成报告")
     report = generate_report(

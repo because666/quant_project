@@ -1,17 +1,17 @@
 {
   "label_fn_name": "e1b",
   "val_ndcg": {
-    "ndcg@5": 0.5440509101886121,
-    "ndcg@10": 0.5387532534906786,
-    "ndcg@20": 0.5341838787834616
+    "ndcg@5": 0.5553682129014156,
+    "ndcg@10": 0.534885555696002,
+    "ndcg@20": 0.5267617069800549
   },
   "train_ndcg": {
-    "ndcg@5": 0.6694717044870195,
-    "ndcg@10": 0.6424876077529431,
-    "ndcg@20": 0.6115505385806149
+    "ndcg@5": 0.8337851275980862,
+    "ndcg@10": 0.8022919893622459,
+    "ndcg@20": 0.7508525716776627
   },
-  "best_iteration": 101,
-  "feature_count": 52,
+  "best_iteration": 518,
+  "feature_count": 54,
   "features": [
     "mom_1m",
     "mom_2m",
@@ -64,6 +64,8 @@
     "vol_price_corr_8w",
     "up_ratio_4w",
     "up_ratio_12w",
+    "high_low_range_4w",
+    "open_close_ratio_4w",
     "vol_up_down_ratio"
   ]
 }

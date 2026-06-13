@@ -28,7 +28,7 @@ import xgboost as xgb
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 MODELS_DIR = PROJECT_ROOT / "models"
 DEFAULT_LGB_PATH = MODELS_DIR / "lightgbm.pkl"
-DEFAULT_XGB_PATH = MODELS_DIR / "xgboost.pkl"
+DEFAULT_XGB_PATH = MODELS_DIR / "xgboost.json"
 METRICS_JSON = MODELS_DIR / "evaluation_metrics.json"
 NDCG_CURVE_PNG = MODELS_DIR / "ndcg_curve.png"
 NDCG_CURVE_JSON = MODELS_DIR / "ndcg_curve.json"
@@ -326,19 +326,27 @@ def run_evaluation(
         print(f"  MAP: {m['map']:.6f}")
 
     section_dates = _load_test_section_dates(data_dir, groups_test)
-    lgb_curve = _ndcg_per_group_at_k(y_rel, pred_lgb, groups_test, 10)
-    xgb_curve = _ndcg_per_group_at_k(y_rel, pred_xgb, groups_test, 10)
+    lgb_curve5 = _ndcg_per_group_at_k(y_rel, pred_lgb, groups_test, 5)
+    lgb_curve10 = _ndcg_per_group_at_k(y_rel, pred_lgb, groups_test, 10)
+    lgb_curve20 = _ndcg_per_group_at_k(y_rel, pred_lgb, groups_test, 20)
+    xgb_curve5 = _ndcg_per_group_at_k(y_rel, pred_xgb, groups_test, 5)
+    xgb_curve10 = _ndcg_per_group_at_k(y_rel, pred_xgb, groups_test, 10)
+    xgb_curve20 = _ndcg_per_group_at_k(y_rel, pred_xgb, groups_test, 20)
 
     curve_payload = {
         "dates": section_dates,
-        "lightgbm_ndcg10": lgb_curve,
-        "xgboost_ndcg10": xgb_curve,
+        "lightgbm_ndcg5": lgb_curve5,
+        "lightgbm_ndcg10": lgb_curve10,
+        "lightgbm_ndcg20": lgb_curve20,
+        "xgboost_ndcg5": xgb_curve5,
+        "xgboost_ndcg10": xgb_curve10,
+        "xgboost_ndcg20": xgb_curve20,
     }
     NDCG_CURVE_JSON.parent.mkdir(parents=True, exist_ok=True)
     with open(NDCG_CURVE_JSON, "w", encoding="utf-8") as f:
         json.dump(curve_payload, f, ensure_ascii=False, indent=2)
 
-    _plot_ndcg_curve(section_dates, lgb_curve, xgb_curve, NDCG_CURVE_PNG)
+    _plot_ndcg_curve(section_dates, lgb_curve10, xgb_curve10, NDCG_CURVE_PNG)
     print(f"\nNDCG 曲线已保存: {NDCG_CURVE_PNG} / {NDCG_CURVE_JSON}")
 
     with open(LGB_IMP_JSON, encoding="utf-8") as f:

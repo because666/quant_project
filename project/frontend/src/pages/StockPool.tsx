@@ -15,9 +15,7 @@ import {
 } from '../services/stockPool'
 import { BarChart } from '../components/Charts'
 import { ScrollReveal } from '../components/motion'
-
-/** 模型类型 */
-type ModelType = 'lightgbm' | 'xgboost'
+import { useAppStore, type ModelType } from '../store/useAppStore'
 
 /**
  * 图表说明组件
@@ -48,7 +46,7 @@ const glassCardStyle: React.CSSProperties = {
  * @returns 选股池页面
  */
 function StockPool() {
-  const [modelType, setModelType] = useState<ModelType>('xgboost')
+  const { selectedModel, setSelectedModel } = useAppStore()
   const [topN, setTopN] = useState(50)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -92,7 +90,7 @@ function StockPool() {
         }
       }
       const data = await stockPoolService.rankStocks(
-        topN, modelType, codes, selectedDate || undefined
+        topN, selectedModel, codes, selectedDate || undefined
       )
       setRankData(data)
     } catch (err) {
@@ -101,7 +99,7 @@ function StockPool() {
     } finally {
       setLoading(false)
     }
-  }, [modelType, topN, useCustom, customCodes, selectedDate])
+  }, [selectedModel, topN, useCustom, customCodes, selectedDate])
 
   const loadStockList = useCallback(async () => {
     setStockLoading(true)
@@ -175,8 +173,8 @@ function StockPool() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ fontSize: '14px', color: '#86868B' }}>模型:</span>
             <select
-              value={modelType}
-              onChange={(e) => setModelType(e.target.value as ModelType)}
+              value={selectedModel}
+              onChange={(e) => setSelectedModel(e.target.value as ModelType)}
               style={{
                 border: '1px solid #E8E8ED',
                 borderRadius: '12px',

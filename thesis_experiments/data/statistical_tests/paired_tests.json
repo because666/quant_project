@@ -2,120 +2,120 @@
   {
     "method_a": "B-LGBM",
     "method_b": "B-XGB",
-    "t_stat": 2287.0,
-    "p_value": 0.5117118680308095,
+    "t_stat": 6452.0,
+    "p_value": 0.6073140512857627,
     "significant": false,
     "test_method": "wilcoxon"
   },
   {
     "method_a": "B-LGBM",
     "method_b": "E1a-LGBM",
-    "t_stat": 2045.0,
-    "p_value": 0.133400933007719,
+    "t_stat": 5893.0,
+    "p_value": 0.15222192313544564,
     "significant": false,
     "test_method": "wilcoxon"
   },
   {
     "method_a": "B-LGBM",
     "method_b": "E1b-LGBM",
-    "t_stat": 2396.0,
-    "p_value": 0.7827532300604804,
+    "t_stat": -1.39743783024722,
+    "p_value": 0.16416956642798353,
     "significant": false,
-    "test_method": "wilcoxon"
+    "test_method": "paired-t"
   },
   {
     "method_a": "B-LGBM",
     "method_b": "E2a-AVG",
-    "t_stat": 2137.0,
-    "p_value": 0.23811241425869045,
+    "t_stat": 6700.0,
+    "p_value": 0.9150089094397043,
     "significant": false,
     "test_method": "wilcoxon"
   },
   {
     "method_a": "B-LGBM",
     "method_b": "E2b-RRF",
-    "t_stat": 2314.0,
-    "p_value": 0.5741591790157523,
+    "t_stat": 6574.0,
+    "p_value": 0.7538242622304603,
     "significant": false,
     "test_method": "wilcoxon"
   },
   {
     "method_a": "B-XGB",
     "method_b": "E1a-LGBM",
-    "t_stat": 2122.0,
-    "p_value": 0.2179220807724287,
+    "t_stat": 6676.0,
+    "p_value": 0.883820251996618,
     "significant": false,
     "test_method": "wilcoxon"
   },
   {
     "method_a": "B-XGB",
     "method_b": "E1b-LGBM",
-    "t_stat": 2245.0,
-    "p_value": 0.42210962215607883,
+    "t_stat": 6473.0,
+    "p_value": 0.6316316398226947,
     "significant": false,
     "test_method": "wilcoxon"
   },
   {
     "method_a": "B-XGB",
     "method_b": "E2a-AVG",
-    "t_stat": 2424.0,
-    "p_value": 0.858719222832677,
+    "t_stat": 6267.0,
+    "p_value": 0.4135509632012131,
     "significant": false,
     "test_method": "wilcoxon"
   },
   {
     "method_a": "B-XGB",
     "method_b": "E2b-RRF",
-    "t_stat": 2324.0,
-    "p_value": 0.5981701469772194,
+    "t_stat": 6565.0,
+    "p_value": 0.7426260362550325,
     "significant": false,
     "test_method": "wilcoxon"
   },
   {
     "method_a": "E1a-LGBM",
     "method_b": "E1b-LGBM",
-    "t_stat": 2339.0,
-    "p_value": 0.6350154960603531,
+    "t_stat": 6671.0,
+    "p_value": 0.877343583675068,
     "significant": false,
     "test_method": "wilcoxon"
   },
   {
     "method_a": "E1a-LGBM",
     "method_b": "E2a-AVG",
-    "t_stat": 2035.0,
-    "p_value": 0.12460522691058787,
+    "t_stat": 6255.0,
+    "p_value": 0.40238835663987316,
     "significant": false,
     "test_method": "wilcoxon"
   },
   {
     "method_a": "E1a-LGBM",
     "method_b": "E2b-RRF",
-    "t_stat": 2088.0,
-    "p_value": 0.17677804702565847,
+    "t_stat": 6389.0,
+    "p_value": 0.5370037362526769,
     "significant": false,
     "test_method": "wilcoxon"
   },
   {
     "method_a": "E1b-LGBM",
     "method_b": "E2a-AVG",
-    "t_stat": 2062.0,
-    "p_value": 0.1494463912526307,
+    "t_stat": 6051.0,
+    "p_value": 0.24107314045611783,
     "significant": false,
     "test_method": "wilcoxon"
   },
   {
     "method_a": "E1b-LGBM",
     "method_b": "E2b-RRF",
-    "t_stat": 2018.0,
-    "p_value": 0.11069827615638081,
+    "t_stat": 0.6208482210883327,
+    "p_value": 0.5355613781579667,
     "significant": false,
-    "test_method": "wilcoxon"
+    "test_method": "paired-t"
   },
   {
     "method_a": "E2a-AVG",
     "method_b": "E2b-RRF",
-    "t_stat": 2373.0,
-    "p_value": 0.7218334077522169,
+    "t_stat": 6741.0,
+    "p_value": 0.9685672269702088,
     "significant": false,
     "test_method": "wilcoxon"
   }

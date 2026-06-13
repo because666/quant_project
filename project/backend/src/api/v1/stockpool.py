@@ -3,15 +3,14 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Any
 
 import numpy as np
 import pandas as pd
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
-from src.api.v1.deps import get_predictor
-from src.predictor import ModelPredictor
+from src.api.v1.deps import get_predictor_by_type
 from src.data_loader import load_factor_columns, fill_missing_factors
 
 logger = logging.getLogger(__name__)
@@ -229,9 +228,14 @@ def get_stock_count(request: Request) -> dict[str, Any]:
 def rank_stocks(
     request: Request,
     body: StockPoolRankRequest,
-    predictor: Annotated[ModelPredictor, Depends(get_predictor)],
 ) -> dict[str, Any]:
     """使用模型对股票池排序，返回Top N推荐股票。未指定自定义池时使用全量股票"""
+    try:
+        predictor = get_predictor_by_type(body.model_type)
+    except (FileNotFoundError, RuntimeError) as e:
+        logger.exception("加载模型失败")
+        raise HTTPException(status_code=503, detail=f"无法加载{body.model_type}模型: {e}") from e
+
     try:
         df, timestamp = _load_section(predictor._data_dir, date_str=body.date)
     except Exception as e:

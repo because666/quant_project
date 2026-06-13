@@ -206,7 +206,8 @@ def run_backtest_for_model(
     *,
     top_n: int = 20,
     vol_penalty: float = 1.0,
-    use_split: str = "test",
+    search_split: str = "test",
+    data_dir: Path | None = None,
 ) -> tuple[pd.DataFrame, dict[str, Any]]:
     """
     对指定模型运行回测。
@@ -216,23 +217,25 @@ def run_backtest_for_model(
         model_path: 模型文件路径
         top_n: 选股数量
         vol_penalty: 波动率惩罚系数
-        use_split: 数据切分方式
+        search_split: 数据切分方式，用于指定回测使用的数据集（如"val"或"test"）
+        data_dir: 数据目录路径，为None时使用BacktestEngine内部默认路径
 
     返回:
         (回测结果DataFrame, 回测指标字典)
     """
-    logger.info("开始回测 %s（model_path=%s, vol_penalty=%.1f）", model_name, model_path, vol_penalty)
-    predictor = ModelPredictor("lightgbm", model_path=model_path)
+    logger.info("开始回测 %s（model_path=%s, vol_penalty=%.1f, split=%s）", model_name, model_path, vol_penalty, search_split)
+    predictor = ModelPredictor("lightgbm", model_path=model_path, data_dir=data_dir)
     engine = BacktestEngine(
         "lightgbm",
         top_n=top_n,
         vol_penalty=vol_penalty,
+        data_dir=data_dir,
     )
     weekly_df = engine.load_weekly_data()
     result_df = engine.run_backtest(
         weekly_df,
         predictor=predictor,
-        use_split=use_split,
+        use_split=search_split,
     )
     if result_df.empty:
         logger.warning("%s 回测结果为空", model_name)
@@ -241,9 +244,9 @@ def run_backtest_for_model(
     logger.info(
         "%s 回测完成：年化收益=%.2f%%, 夏普=%.3f, 最大回撤=%.2f%%",
         model_name,
-        metrics.get("annualized_return", 0) * 100,
-        metrics.get("sharpe_ratio", 0),
-        metrics.get("max_drawdown", 0) * 100,
+        (metrics.get("annualized_return") or 0) * 100,
+        metrics.get("sharpe_ratio") or 0,
+        (metrics.get("max_drawdown") or 0) * 100,
     )
     return result_df, metrics
 
@@ -320,7 +323,7 @@ def generate_report(
 
     lines.append("## 3. 回测指标对比")
     lines.append("")
-    lines.append("回测参数：top_n=20, vol_penalty=1.0, use_split=test")
+    lines.append("回测参数：top_n=20, vol_penalty在验证集上搜索，测试集仅用于最终评估")
     lines.append("")
     lines.append("| 模型 | 年化收益(%) | 夏普比率 | 最大回撤(%) | 换手率 | 周度胜率(%) |")
     lines.append("|------|------------|---------|------------|--------|------------|")
@@ -447,7 +450,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="实验1：收益-夏普感知损失函数对比")
     parser.add_argument("--skip-train", action="store_true", help="跳过训练，只跑回测")
     parser.add_argument("--n-trials", type=int, default=20, help="Optuna搜索次数（默认20）")
+    parser.add_argument("--data-dir", type=str, default=None, help="数据目录（默认data/）")
     args = parser.parse_args()
+
+    data_dir = Path(args.data_dir) if args.data_dir else None
 
     EXPERIMENT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -489,37 +495,50 @@ def main() -> None:
 
         best_sharpe = float("-inf")
         best_vp = vol_penalty_grid[0]
-        best_result_df = pd.DataFrame()
-        best_metrics: dict[str, Any] = {}
 
         for vp in vol_penalty_grid:
-            logger.info("搜索 vol_penalty=%.1f for %s", vp, model_name)
-            result_df, metrics = run_backtest_for_model(
+            logger.info("验证集搜索 vol_penalty=%.1f for %s", vp, model_name)
+            _, metrics = run_backtest_for_model(
                 model_name,
                 model_path,
                 top_n=20,
                 vol_penalty=vp,
-                use_split="test",
+                search_split="val",
+                data_dir=data_dir,
             )
-            sharpe = metrics.get("sharpe_ratio", float("-inf"))
+            sharpe = metrics.get("sharpe_ratio") or float("-inf")
             logger.info(
-                "  vol_penalty=%.1f => 夏普=%.3f",
+                "  [验证集] vol_penalty=%.1f => 夏普=%.3f",
                 vp,
                 sharpe if sharpe != float("-inf") else float("nan"),
             )
             if sharpe > best_sharpe:
                 best_sharpe = sharpe
                 best_vp = vp
-                best_result_df = result_df
-                best_metrics = metrics
 
         best_vol_penalties[model_name] = best_vp
-        all_metrics[model_name] = best_metrics
         logger.info(
-            "%s 最优 vol_penalty=%.1f（夏普=%.3f）",
+            "%s 验证集最优 vol_penalty=%.1f（夏普=%.3f），开始在测试集上评估",
             model_name,
             best_vp,
             best_sharpe if best_sharpe != float("-inf") else float("nan"),
+        )
+
+        best_result_df, best_metrics = run_backtest_for_model(
+            model_name,
+            model_path,
+            top_n=20,
+            vol_penalty=best_vp,
+            search_split="test",
+            data_dir=data_dir,
+        )
+        all_metrics[model_name] = best_metrics
+        test_sharpe = best_metrics.get("sharpe_ratio", float("nan"))
+        logger.info(
+            "%s 测试集评估完成：vol_penalty=%.1f, 夏普=%.3f",
+            model_name,
+            best_vp,
+            test_sharpe,
         )
 
         result_path = EXPERIMENT_DIR / f"{model_label}_backtest_result.parquet"

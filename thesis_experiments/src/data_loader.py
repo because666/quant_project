@@ -18,11 +18,30 @@ logger = logging.getLogger(__name__)
 
 NON_FACTOR_COLUMNS: set[str] = {"date", "stock_code", "close", "future_return_1w", "future_close", "group_id", "group_size"}
 ZERO_FACTOR_COLUMNS: set[str] = {"avg_turnover_4w", "avg_turnover_8w", "avg_turnover_12w", "turnover_change_1w", "high_low_range_4w", "open_close_ratio_4w"}
+"""原始数据集中全零的因子列名（仅作文档参考，逻辑中已改为动态检测，不再使用此常量排除列）。"""
 
 # 内存缓存：(data_dir 绝对路径, 文件名, parquet mtime) -> 解析后的元组，避免重复 IO
 _split_cache: dict[tuple[str, str, float, bool, str], tuple[pd.DataFrame, np.ndarray, list[int]]] = {}
 _factor_cols_cache: dict[tuple[str, float], list[str]] = {}
 _snapshot_cache: dict[tuple[str, float], tuple[pd.DataFrame, list[str]]] = {}
+
+
+def _detect_zero_factor_columns(df: pd.DataFrame, candidate_cols: list[str]) -> set[str]:
+    """
+    动态检测候选因子列中绝对值之和为零的列（即全零列）。
+
+    参数：
+        df: 待检测的 DataFrame
+        candidate_cols: 候选因子列名列表
+
+    返回：
+        全零因子列名的集合
+    """
+    zero_factor_cols: set[str] = set()
+    for col in candidate_cols:
+        if col in df.columns and pd.to_numeric(df[col], errors="coerce").abs().sum() == 0:
+            zero_factor_cols.add(col)
+    return zero_factor_cols
 
 
 def clear_data_loader_cache() -> None:
@@ -120,8 +139,9 @@ def to_query_format(
     out = out.sort_values(["date", "stock_code"]).reset_index(drop=True)
 
     if factor_cols is None:
-        forbidden = NON_FACTOR_COLUMNS | ZERO_FACTOR_COLUMNS
-        factor_cols = [c for c in out.columns if c not in forbidden]
+        candidate_cols = [c for c in out.columns if c not in NON_FACTOR_COLUMNS]
+        zero_cols = _detect_zero_factor_columns(out, candidate_cols)
+        factor_cols = [c for c in candidate_cols if c not in zero_cols]
 
     # group_id：date -> code 0..(n_groups-1)
     date_cat = pd.Categorical(out["date"], categories=np.sort(out["date"].unique()), ordered=True)
@@ -162,11 +182,22 @@ def generate_query_datasets(
     # 标签为空的行（尾部无法构造 future）需要丢弃，否则样本会污染训练
     df_with_label = df_with_label.dropna(subset=["future_return_1w"]).copy()
 
+    # 标签异常值截断（Winsorize）：按0.1%~99.9%分位数截断极端收益率
+    clip_lo = float(df_with_label["future_return_1w"].quantile(0.001))
+    clip_hi = float(df_with_label["future_return_1w"].quantile(0.999))
+    before_clip = (df_with_label["future_return_1w"].abs() > max(abs(clip_lo), abs(clip_hi))).sum()
+    df_with_label["future_return_1w"] = df_with_label["future_return_1w"].clip(clip_lo, clip_hi)
+    if before_clip > 0:
+        logger.info("标签异常值截断: [%.4f, %.4f], 影响 %d 行 (%.3f%%)", clip_lo, clip_hi, before_clip, before_clip / len(df_with_label) * 100)
+
     train_df, val_df, test_df = split_by_time(df_with_label, train_end=train_end, val_end=val_end)
 
-    # 推断因子列：去除已知字段
-    forbidden = NON_FACTOR_COLUMNS | ZERO_FACTOR_COLUMNS
-    factor_cols = [c for c in df_with_label.columns if c not in forbidden]
+    # 推断因子列：去除已知字段，再动态排除全零列
+    candidate_cols = [c for c in df_with_label.columns if c not in NON_FACTOR_COLUMNS]
+    zero_cols = _detect_zero_factor_columns(df_with_label, candidate_cols)
+    factor_cols = [c for c in candidate_cols if c not in zero_cols]
+    if zero_cols:
+        logger.info("动态检测到全零因子列已排除: %s", zero_cols)
     with open(output_dir / "factor_columns.pkl", "wb") as f:
         pickle.dump(factor_cols, f)
 

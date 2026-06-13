@@ -33,7 +33,7 @@ DEFAULT_TUNE_LOG_PATH = MODELS_DIR / "xgboost_optuna_trials.jsonl"
 
 RANDOM_STATE = 42
 N_OPTUNA_TRIALS = 20
-EARLY_STOPPING_ROUNDS = 20
+EARLY_STOPPING_ROUNDS = 100
 MAX_BOOST_ROUND = 2000
 _EXCLUDE_COLS = {"group_id", "group_size"}
 
@@ -348,8 +348,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Train XGBoost rank:ndcg with optional Optuna tuning.")
     parser.add_argument("--trials", type=int, default=N_OPTUNA_TRIALS, help="Optuna trials (default 20)")
     parser.add_argument("--no-tune", action="store_true", help="Skip hyperparameter search")
+    parser.add_argument("--data-dir", type=str, default=None, help="数据目录（默认data/）")
     args = parser.parse_args()
-    train_final_xgboost(tune=not args.no_tune, n_trials=max(1, args.trials))
+    data_dir = Path(args.data_dir) if args.data_dir else DATA_OUT_DIR
+    train_final_xgboost(tune=not args.no_tune, n_trials=max(1, args.trials), data_dir=data_dir)
 
 
 if __name__ == "__main__":

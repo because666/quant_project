@@ -11,7 +11,7 @@
       },
       {
         "name": "mom_3m",
-        "importance": 0.0
+        "importance": 0.18717899918556213
       },
       {
         "name": "mom_4m",
@@ -27,7 +27,7 @@
       },
       {
         "name": "mom_accel_1m",
-        "importance": 0.949317991733551
+        "importance": 1.5056689828634262
       },
       {
         "name": "mom_reversal",
@@ -35,7 +35,7 @@
       },
       {
         "name": "mom_short_long",
-        "importance": 0.0
+        "importance": 1.0788509845733643
       },
       {
         "name": "mom_1w",
@@ -91,7 +91,7 @@
       },
       {
         "name": "avg_amount_4w",
-        "importance": 6.632349967956543
+        "importance": 7.859440088272095
       },
       {
         "name": "rsi_7",
@@ -127,7 +127,7 @@
       },
       {
         "name": "willr_14",
-        "importance": 0.5856009721755981
+        "importance": 0.6873779892921448
       },
       {
         "name": "cci_14",
@@ -147,7 +147,7 @@
       },
       {
         "name": "ma_ratio_24w",
-        "importance": 0.4593299925327301
+        "importance": 0.269089013338089
       },
       {
         "name": "ma_slope_4w",
@@ -167,7 +167,7 @@
       },
       {
         "name": "max_retreat_4w",
-        "importance": 1.980793058872223
+        "importance": 2.488610029220581
       },
       {
         "name": "max_retreat_8w",
@@ -191,7 +191,7 @@
       },
       {
         "name": "obv_change_4w",
-        "importance": 0.0
+        "importance": 1.5114509761333466
       },
       {
         "name": "vol_price_corr_8w",
@@ -207,7 +207,7 @@
       },
       {
         "name": "vol_up_down_ratio",
-        "importance": 0.4714609980583191
+        "importance": 0.5489569902420044
       }
     ],
     "params": {
@@ -215,12 +215,12 @@
       "best_iteration": 1,
       "feature_count": 52,
       "label_fn": "return_aware_relevance",
-      "val_ndcg@5": 0.6205669995011236,
-      "val_ndcg@10": 0.5926444762140276,
-      "val_ndcg@20": 0.581892749215839,
-      "train_ndcg@5": 0.5470115434581372,
-      "train_ndcg@10": 0.5491928105834933,
-      "train_ndcg@20": 0.5450660140400788,
+      "val_ndcg@5": 0.6197771911405773,
+      "val_ndcg@10": 0.5945306024149231,
+      "val_ndcg@20": 0.5832295752699483,
+      "train_ndcg@5": 0.5558262330376081,
+      "train_ndcg@10": 0.5555591217024227,
+      "train_ndcg@20": 0.5475639970250629,
       "metric": "ndcg",
       "ndcg_eval_at": [
         5,
@@ -261,15 +261,15 @@
         30
       ],
       "boosting_type": "gbdt",
-      "num_leaves": 27,
-      "learning_rate": 0.06192220203758586,
-      "feature_fraction": 0.7595095360360976,
-      "bagging_fraction": 0.499772038529325,
+      "num_leaves": 28,
+      "learning_rate": 0.03567093454434688,
+      "feature_fraction": 0.4467004769416763,
+      "bagging_fraction": 0.48147665092997033,
       "bagging_freq": 5,
-      "min_child_samples": 493,
-      "lambda_l1": 1.7511287762819256,
-      "lambda_l2": 7.107733416793061,
-      "min_split_gain": 0.28613701116797446,
+      "min_child_samples": 184,
+      "lambda_l1": 1.2558371808135111,
+      "lambda_l2": 3.2754690436463525,
+      "min_split_gain": 0.15765511872759863,
       "verbose": -1,
       "seed": 42,
       "bagging_seed": 42,
@@ -493,7 +493,6 @@
       "objective": "rank:ndcg",
       "best_iteration": 48,
       "feature_count": 52,
-      "label_fn": "return_aware_relevance",
       "val_ndcg@5": 0.5997972775528634,
       "val_ndcg@10": 0.5908666976650693,
       "val_ndcg@20": 0.5757841894138028,

@@ -1,4 +1,4 @@
-﻿# [共享文件] 本文件同时存在于 project/backend/src/ 和 thesis_experiments/src/，修改时请同步更新两处
+# [共享文件] 本文件同时存在于 project/backend/src/ 和 thesis_experiments/src/，修改时请同步更新两处
 """
 回测与排序评估常用指标：年化收益、夏普、最大回撤、换手率、胜率、NDCG@K 及汇总字典（可 JSON）。
 
@@ -103,6 +103,69 @@ def sharpe_ratio(
     if sig <= 0 or np.isnan(sig):
         return float("nan")
     return (mu / sig) * np.sqrt(float(trading_days_per_year))
+
+
+def sharpe_ratio_weekly(
+    weekly_returns: pd.Series | np.ndarray | list[float],
+    risk_free_rate: float = 0.03,
+    *,
+    weeks_per_year: int = 52,
+) -> float:
+    """
+    基于周频收益率直接计算夏普比率，避免日频前向填充引入的偏差。
+
+    参数:
+        weekly_returns: 周频收益率序列（非净值序列）
+        risk_free_rate: 年化无风险利率，默认0.03
+        weeks_per_year: 年周数，默认52
+
+    返回:
+        年化夏普比率；输入不足或标准差为零时返回NaN
+    """
+    r = np.asarray(weekly_returns, dtype=np.float64).ravel()
+    r = r[~np.isnan(r)]
+    if r.size < 2:
+        return float("nan")
+    weekly_rf = (1.0 + risk_free_rate) ** (1.0 / weeks_per_year) - 1.0
+    excess = r - weekly_rf
+    mu = float(excess.mean())
+    sig = float(excess.std(ddof=1))
+    if sig <= 0 or np.isnan(sig):
+        return float("nan")
+    return (mu / sig) * np.sqrt(float(weeks_per_year))
+
+
+def sortino_ratio_weekly(
+    weekly_returns: pd.Series | np.ndarray | list[float],
+    risk_free_rate: float = 0.03,
+    *,
+    weeks_per_year: int = 52,
+) -> float:
+    """
+    基于周频收益率直接计算Sortino比率，避免日频前向填充引入的偏差。
+
+    参数:
+        weekly_returns: 周频收益率序列（非净值序列）
+        risk_free_rate: 年化无风险利率，默认0.03
+        weeks_per_year: 年周数，默认52
+
+    返回:
+        年化Sortino比率；输入不足或无下行波动时返回NaN
+    """
+    r = np.asarray(weekly_returns, dtype=np.float64).ravel()
+    r = r[~np.isnan(r)]
+    if r.size < 2:
+        return float("nan")
+    weekly_rf = (1.0 + risk_free_rate) ** (1.0 / weeks_per_year) - 1.0
+    excess = r - weekly_rf
+    downside = excess[excess < 0]
+    if downside.size == 0:
+        return float("nan")
+    downside_std = float(downside.std(ddof=1))
+    if downside_std <= 0 or np.isnan(downside_std):
+        return float("nan")
+    mu = float(excess.mean())
+    return (mu / downside_std) * np.sqrt(float(weeks_per_year))
 
 
 def max_drawdown(
@@ -282,12 +345,32 @@ def aggregate_metrics(
     y_score_ndcg: np.ndarray | list[float] | None = None,
     ndcg_k: int = 10,
     trading_days_per_year: int = TradingDaysPerYear,
+    use_weekly_sharpe: bool = False,
+    weekly_returns: np.ndarray | pd.Series | list[float] | None = None,
 ) -> dict[str, Any]:
     """
     汇总指标为 JSON 可序列化字典（日期为 ISO 字符串，无 numpy 标量残留）。
+
+    参数:
+        nav_series: 净值序列
+        risk_free_rate: 无风险利率
+        trades_df: 交易记录DataFrame
+        y_true_ndcg: NDCG真实相关性
+        y_score_ndcg: NDCG模型打分
+        ndcg_k: NDCG的K值
+        trading_days_per_year: 年交易日数
+        use_weekly_sharpe: 是否使用周频直接计算夏普比率和Sortino比率，默认False
+        weekly_returns: 周频收益率序列，当use_weekly_sharpe=True时必须提供
+
+    返回:
+        汇总指标字典；use_weekly_sharpe=True且weekly_returns有效时，
+        夏普比率和Sortino比率使用周频直接计算，避免日频前向填充偏差
     """
     ar = annualized_return(nav_series, trading_days_per_year=trading_days_per_year)
-    sr = sharpe_ratio(nav_series, risk_free_rate, trading_days_per_year=trading_days_per_year)
+    if use_weekly_sharpe and weekly_returns is not None:
+        sr = sharpe_ratio_weekly(weekly_returns, risk_free_rate)
+    else:
+        sr = sharpe_ratio(nav_series, risk_free_rate, trading_days_per_year=trading_days_per_year)
     out: dict[str, Any] = {
         "annualized_return": _finite_or_none(ar),
         "sharpe_ratio": _finite_or_none(sr),
@@ -298,7 +381,10 @@ def aggregate_metrics(
     out["drawdown_peak_date"] = dd["peak_date"]
     out["drawdown_trough_date"] = dd["trough_date"]
     out["calmar_ratio"] = _finite_or_none(calmar_ratio(nav_series, trading_days_per_year=trading_days_per_year))
-    out["sortino_ratio"] = _finite_or_none(sortino_ratio(nav_series, risk_free_rate, trading_days_per_year=trading_days_per_year))
+    if use_weekly_sharpe and weekly_returns is not None:
+        out["sortino_ratio"] = _finite_or_none(sortino_ratio_weekly(weekly_returns, risk_free_rate))
+    else:
+        out["sortino_ratio"] = _finite_or_none(sortino_ratio(nav_series, risk_free_rate, trading_days_per_year=trading_days_per_year))
 
     if trades_df is not None and not trades_df.empty:
         out["turnover_rate"] = _finite_or_none(turnover_rate(trades_df))

@@ -46,8 +46,38 @@ interface NDCGData {
     k: number
     ndcg: number
   }>
-  mapScore: number
-  mrrScore: number
+}
+
+/** NDCG曲线JSON数据接口（ndcg_curve.json结构） */
+interface NDCGCurveJson {
+  dates: string[]
+  lightgbm_ndcg5: number[]
+  lightgbm_ndcg10: number[]
+  lightgbm_ndcg20: number[]
+  xgboost_ndcg5: number[]
+  xgboost_ndcg10: number[]
+  xgboost_ndcg20: number[]
+}
+
+/**
+ * 将ndcg_curve.json数据转换为ndcgByTime格式
+ * @param curveData - ndcg_curve.json原始数据
+ * @param model - 选择的模型类型
+ * @returns ndcgByTime数组
+ */
+function transformNdcgCurveData(
+  curveData: NDCGCurveJson,
+  model: ModelType
+): Array<{ date: string; 'ndcg@5': number; 'ndcg@10': number; 'ndcg@20': number }> {
+  const ndcg5Key = model === 'lightgbm' ? 'lightgbm_ndcg5' : 'xgboost_ndcg5'
+  const ndcg10Key = model === 'lightgbm' ? 'lightgbm_ndcg10' : 'xgboost_ndcg10'
+  const ndcg20Key = model === 'lightgbm' ? 'lightgbm_ndcg20' : 'xgboost_ndcg20'
+  return curveData.dates.map((date, i) => ({
+    date,
+    'ndcg@5': curveData[ndcg5Key][i],
+    'ndcg@10': curveData[ndcg10Key][i],
+    'ndcg@20': curveData[ndcg20Key][i],
+  }))
 }
 
 /**
@@ -217,9 +247,59 @@ function ModelAnalysis() {
     xgboost: Record<string, number>
   } | null>(null)
 
+  /**
+   * 从模型metrics中提取验证集NDCG值
+   * 兼容两种数据结构：
+   * - API返回的嵌套结构：{ val_ndcg: { "ndcg@5": 0.62, ... } }
+   * - 静态JSON的扁平结构：{ "val_ndcg@5": 0.62, ... }
+   * @param metrics - 模型metrics对象
+   * @returns 包含ndcg5/ndcg10/ndcg20的对象
+   */
+  function extractValNdcg(metrics: Record<string, unknown>): { ndcg5: number; ndcg10: number; ndcg20: number } {
+    // 尝试嵌套结构（API返回格式）
+    const valNdcg = metrics['val_ndcg'] as Record<string, number> | undefined
+    if (valNdcg && typeof valNdcg === 'object') {
+      return {
+        ndcg5: valNdcg['ndcg@5'] || 0,
+        ndcg10: valNdcg['ndcg@10'] || 0,
+        ndcg20: valNdcg['ndcg@20'] || 0,
+      }
+    }
+    // 尝试扁平结构（静态JSON格式）
+    return {
+      ndcg5: Number(metrics['val_ndcg@5']) || 0,
+      ndcg10: Number(metrics['val_ndcg@10']) || 0,
+      ndcg20: Number(metrics['val_ndcg@20']) || 0,
+    }
+  }
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
+      // 始终从静态文件获取NDCG曲线数据
+      let ndcgCurveRaw: NDCGCurveJson | null = null
+      try {
+        const ndcgRes = await fetch('/data/ndcg_curve.json')
+        ndcgCurveRaw = (await ndcgRes.json()) as NDCGCurveJson
+      } catch {
+        console.error('加载NDCG曲线静态数据失败')
+      }
+
+      // 始终加载评估指标静态文件（用于雷达图）
+      let evalMetricsStatic: { lightgbm: Record<string, number>; xgboost: Record<string, number> } | null = null
+      try {
+        const evalRes = await fetch('/data/evaluation_metrics.json')
+        const evalJson = (await evalRes.json()) as Record<string, unknown>
+        if (evalJson.lightgbm && evalJson.xgboost) {
+          evalMetricsStatic = {
+            lightgbm: evalJson.lightgbm as Record<string, number>,
+            xgboost: evalJson.xgboost as Record<string, number>,
+          }
+        }
+      } catch {
+        console.error('加载评估指标静态数据失败')
+      }
+
       try {
         const modelData = await backtestService.getModelAnalysis()
         const modelInfo = modelData[selectedModel]
@@ -248,6 +328,7 @@ function ModelAnalysis() {
           })
         }
 
+        // 优先使用API返回的evaluation，否则使用静态文件
         const evalData = modelData.evaluation || {}
         const evalRecord = evalData as Record<string, Record<string, number>>
         if (evalRecord.lightgbm && evalRecord.xgboost) {
@@ -255,45 +336,77 @@ function ModelAnalysis() {
             lightgbm: evalRecord.lightgbm,
             xgboost: evalRecord.xgboost,
           })
+        } else if (evalMetricsStatic) {
+          setBothModelsEval(evalMetricsStatic)
         }
 
-        const modelEval = evalRecord[selectedModel] || {}
-        
-        // 生成模拟NDCG时间序列数据（24个月）
-        const ndcgByTime = []
-        const startDate = new Date('2022-01-01')
-        for (let i = 0; i < 24; i++) {
-          const date = new Date(startDate)
-          date.setMonth(date.getMonth() + i)
-          ndcgByTime.push({
-            date: date.toISOString().split('T')[0].slice(0, 7), // YYYY-MM格式
-            'ndcg@5': 0.3 + Math.random() * 0.15, // 0.3-0.45之间
-            'ndcg@10': 0.35 + Math.random() * 0.15, // 0.35-0.5之间
-            'ndcg@20': 0.38 + Math.random() * 0.12, // 0.38-0.5之间
-          })
-        }
-        
+        // 从ndcg_curve.json获取NDCG时间序列数据
+        const ndcgByTime = ndcgCurveRaw
+          ? transformNdcgCurveData(ndcgCurveRaw, selectedModel)
+          : []
+
+        // 从模型参数获取验证集NDCG值（兼容嵌套和扁平两种结构）
+        const modelMetrics = (modelInfo?.metrics as Record<string, unknown>) || {}
+        const valNdcg = extractValNdcg(modelMetrics)
         setNdcgData({
           ndcgByTime,
           ndcgByK: [
-            { k: 5, ndcg: modelEval['ndcg@5'] || 0.35 },
-            { k: 10, ndcg: modelEval['ndcg@10'] || 0.42 },
-            { k: 20, ndcg: modelEval['ndcg@20'] || 0.45 },
+            { k: 5, ndcg: valNdcg.ndcg5 },
+            { k: 10, ndcg: valNdcg.ndcg10 },
+            { k: 20, ndcg: valNdcg.ndcg20 },
           ],
-          mapScore: modelEval.map || 0.38,
-          mrrScore: 0.35,
         })
       } catch (error) {
         console.error('加载模型分析数据失败:', error)
         try {
-          const [featureRes, ndcgRes] = await Promise.all([
-            fetch('/data/model_analysis.json'),
-            fetch('/data/ndcg_curve.json'),
-          ])
-          const featureJson = await featureRes.json()
-          const ndcgJson = await ndcgRes.json()
-          setFeatureData(featureJson[selectedModel])
-          setNdcgData(ndcgJson[selectedModel])
+          // 从静态JSON文件回退
+          const featureRes = await fetch('/data/model_analysis.json')
+          const featureJson = (await featureRes.json()) as Record<string, {
+            features: Array<{ name: string; importance: number }>
+            params: Record<string, string | number>
+          }>
+          const modelInfo = featureJson[selectedModel]
+          if (modelInfo) {
+            setFeatureData({
+              features: modelInfo.features.map((f) => ({
+                name: f.name,
+                importance: f.importance,
+              })),
+              params: modelInfo.params || {},
+            })
+          }
+
+          // 静态回退时也设置双模型特征对比数据
+          const lgbmInfo = featureJson.lightgbm
+          const xgbInfo = featureJson.xgboost
+          if (lgbmInfo?.features && xgbInfo?.features) {
+            setBothModelsFeatures({
+              lightgbm: lgbmInfo.features.map((f) => ({ name: f.name, importance: f.importance })),
+              xgboost: xgbInfo.features.map((f) => ({ name: f.name, importance: f.importance })),
+            })
+          }
+
+          // 静态回退时也设置评估指标雷达图数据
+          if (evalMetricsStatic) {
+            setBothModelsEval(evalMetricsStatic)
+          }
+
+          // 从ndcg_curve.json获取NDCG时间序列数据
+          const ndcgByTime = ndcgCurveRaw
+            ? transformNdcgCurveData(ndcgCurveRaw, selectedModel)
+            : []
+
+          // 从模型参数获取验证集NDCG值（兼容嵌套和扁平两种结构）
+          const fallbackMetrics = (modelInfo?.params as Record<string, unknown>) || {}
+          const fallbackNdcg = extractValNdcg(fallbackMetrics)
+          setNdcgData({
+            ndcgByTime,
+            ndcgByK: [
+              { k: 5, ndcg: fallbackNdcg.ndcg5 },
+              { k: 10, ndcg: fallbackNdcg.ndcg10 },
+              { k: 20, ndcg: fallbackNdcg.ndcg20 },
+            ],
+          })
         } catch {
           console.error('静态数据也不可用')
         }
@@ -448,9 +561,9 @@ function ModelAnalysis() {
       <ScrollReveal index={1}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
         {[
-          { label: 'MAP', value: ndcgData?.mapScore.toFixed(3), color: '#0071E3' },
-          { label: 'MRR', value: ndcgData?.mrrScore.toFixed(3), color: '#34C759' },
-          { label: 'NDCG@10', value: ndcgData?.ndcgByK.find(d => d.k === 10)?.ndcg.toFixed(3), color: '#AF52DE' },
+          { label: 'NDCG@5', value: ndcgData?.ndcgByK.find(d => d.k === 5)?.ndcg.toFixed(3), color: '#0071E3' },
+          { label: 'NDCG@10', value: ndcgData?.ndcgByK.find(d => d.k === 10)?.ndcg.toFixed(3), color: '#34C759' },
+          { label: 'NDCG@20', value: ndcgData?.ndcgByK.find(d => d.k === 20)?.ndcg.toFixed(3), color: '#AF52DE' },
           { label: '特征数量', value: featureData?.features.length ?? 0, color: '#FF9500' },
         ].map((item, index) => (
           <motion.div
@@ -663,55 +776,8 @@ function ModelAnalysis() {
       </motion.div>
       </ScrollReveal>
 
-      {/* Transformer 占位 */}
-      <ScrollReveal index={7}>
-      <motion.div className="card" whileHover={{ y: -2 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
-        <div style={{ padding: '32px' }}>
-          <div style={{ 
-            height: '320px', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            background: 'linear-gradient(135deg, #F5F5F7 0%, rgba(175, 82, 222, 0.08) 50%, rgba(0, 113, 227, 0.08) 100%)',
-            borderRadius: '16px'
-          }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ position: 'relative', display: 'inline-block', marginBottom: '16px' }}>
-                <span style={{ fontSize: '56px' }}>🤖</span>
-                <span style={{ 
-                  position: 'absolute', 
-                  top: '-8px', 
-                  right: '-8px', 
-                  background: '#AF52DE', 
-                  color: '#FFFFFF', 
-                  fontSize: '11px', 
-                  padding: '4px 10px', 
-                  borderRadius: '12px',
-                  fontWeight: 500
-                }}>
-                  Coming Soon
-                </span>
-              </div>
-              <h3 style={{ fontSize: '22px', fontWeight: 600, color: '#1D1D1F', marginBottom: '8px' }}>
-                Transformer 排序模型
-              </h3>
-              <p style={{ fontSize: '14px', color: '#86868B', maxWidth: '400px', margin: '0 auto', lineHeight: 1.6 }}>
-                基于自注意力机制的深度学习排序模型，能够捕捉股票间的复杂关联关系，
-                提供更精准的收益预测能力。
-              </p>
-              <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center', gap: '16px', fontSize: '13px', color: '#86868B' }}>
-                <span>✨ 自注意力机制</span>
-                <span>📊 多头注意力</span>
-                <span>🔄 位置编码</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-      </ScrollReveal>
-
       {/* 模型对比说明 */}
-      <ScrollReveal index={8}>
+      <ScrollReveal index={7}>
       <motion.div className="card" whileHover={{ y: -2 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
         <div className="card-header">
           模型对比说明

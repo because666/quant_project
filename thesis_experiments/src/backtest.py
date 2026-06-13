@@ -34,7 +34,6 @@ except ImportError:
     ak = None  # type: ignore[assignment]
 
 
-from .config import get_settings
 from .data_loader import DATA_OUT_DIR, add_future_return, split_by_time
 try:
     from .db import init_db, session_scope
@@ -199,7 +198,7 @@ class BacktestEngine:
                 非调仓周保持上一期持仓不变，仅更新持仓市值和现金
             custom_predictor: 自定义预测器（如 FusionPredictor），默认 None 时使用 ModelPredictor；
                 传入后 predict_panel / predict 接口需与 ModelPredictor 一致
-            data_dir: 数据目录路径，默认使用配置或 DATA_OUT_DIR
+            data_dir: 数据目录路径，默认为 DATA_OUT_DIR
 
         异常:
             ValueError: top_n 小于 1、initial_capital 非正或 rebalance_freq 小于 1 时抛出
@@ -222,12 +221,7 @@ class BacktestEngine:
         self._rebalance_freq = int(rebalance_freq)
         self.custom_predictor = custom_predictor
         self._last_known_price: dict[str, float] = {}
-        s = get_settings()
-        self._data_dir = (
-            Path(data_dir)
-            if data_dir is not None
-            else (Path(s.quant_data_dir) if s.quant_data_dir.strip() else DATA_OUT_DIR)
-        )
+        self.data_dir = Path(data_dir) if data_dir is not None else DATA_OUT_DIR
 
     def _buy_cash_per_share(self, close: float) -> float:
         """买入 1 股所需现金：含滑点后的单价 * (1+佣金)。"""
@@ -262,7 +256,7 @@ class BacktestEngine:
         elif concat_splits:
             parts: list[pd.DataFrame] = []
             for name in ("train", "val", "test"):
-                p = self._data_dir / f"{name}.parquet"
+                p = self.data_dir / f"{name}.parquet"
                 if not p.exists():
                     raise FileNotFoundError(str(p))
                 with p.open("rb") as fp:
@@ -346,14 +340,20 @@ class BacktestEngine:
         if weekly_df is None:
             weekly_df = self.load_weekly_data()
 
-        df = weekly_df.copy()
         if use_split == "test":
-            _, _, test_part = split_by_time(df, train_end=train_end, val_end=val_end)
-            if test_part.empty:
-                raise ValueError("测试集为空，请检查 train_end/val_end 或数据区间")
-            df = test_part.sort_values(["date", "stock_code"]).reset_index(drop=True)
+            df = weekly_df[weekly_df["date"] > pd.Timestamp(val_end)].copy()
+            if df.empty:
+                raise ValueError("测试集为空，请检查 val_end 或数据区间")
+            df = df.sort_values(["date", "stock_code"]).reset_index(drop=True)
+        elif use_split == "val":
+            df = weekly_df[(weekly_df["date"] > pd.Timestamp(train_end)) & (weekly_df["date"] <= pd.Timestamp(val_end))].copy()
+            if df.empty:
+                raise ValueError("验证集为空，请检查 train_end/val_end 或数据区间")
+            df = df.sort_values(["date", "stock_code"]).reset_index(drop=True)
+        else:
+            df = weekly_df.copy()
 
-        pred = predictor or self.custom_predictor or ModelPredictor(self.model_type, data_dir=self._data_dir)
+        pred = predictor or self.custom_predictor or ModelPredictor(self.model_type, data_dir=self.data_dir)
         factor_cols = pred._factor_cols
 
         dates = sorted(df["date"].unique())
@@ -431,6 +431,31 @@ class BacktestEngine:
                     }
                 )
                 continue
+
+            # 检测退市股票：当前持仓中但下一期截面不存在的股票，强制平仓回收现金
+            if week_idx < len(dates_ts) - 1:
+                next_dt = dates_ts[week_idx + 1]
+                next_day = date_to_day.get(next_dt)
+                if next_day is not None and not next_day.empty:
+                    next_stocks = set(next_day["stock_code"].astype(str))
+                    delisted = [code for code in list(positions.keys()) if code not in next_stocks]
+                    for code in delisted:
+                        shares = positions.pop(code)
+                        sell_price = float(px.loc[code, "close"]) if code in px.index else 0.0
+                        if sell_price <= 0:
+                            sell_price = self._last_known_price.get(code, 0.0)
+                        if sell_price > 0:
+                            cash_recovered = self._cash_from_sell(shares, sell_price)
+                            cash += cash_recovered
+                            logger.info(
+                                "退市平仓: %s, 日期=%s, 股数=%.2f, 卖价=%.2f, 回收现金=%.2f",
+                                code, dt, shares, sell_price, cash_recovered,
+                            )
+                        else:
+                            logger.warning(
+                                "退市平仓失败（无有效价格）: %s, 日期=%s, 股数=%.2f，持仓已清除但未回收现金",
+                                code, dt, shares,
+                            )
 
             day_scores = scored_by_date[dt]
 
@@ -607,9 +632,14 @@ def _load_benchmark_nav(
             dates = pd.to_datetime(cached["date"])
             nav = cached["nav"].astype(float)
             logger.info("从本地缓存加载基准净值（symbol=%s）", symbol)
-            return pd.Series(nav.to_numpy(), index=pd.DatetimeIndex(dates), dtype=float)
+            full_nav = pd.Series(nav.to_numpy(), index=pd.DatetimeIndex(dates), dtype=float)
+            return full_nav[(full_nav.index >= start_date) & (full_nav.index <= end_date)]
         except Exception:
             pass
+
+    broader_cache = _find_broader_benchmark_cache(symbol, start_date, end_date)
+    if broader_cache is not None:
+        return broader_cache
 
     result = _load_benchmark_via_akshare(start_date, end_date, symbol, max_retries, retry_delay)
     if not result.empty:
@@ -628,6 +658,50 @@ def _load_benchmark_nav(
 
     logger.warning("基准净值获取失败（symbol=%s），所有来源均不可用", symbol)
     return pd.Series(dtype=float)
+
+
+def _find_broader_benchmark_cache(
+    symbol: str,
+    start_date: pd.Timestamp,
+    end_date: pd.Timestamp,
+) -> pd.Series | None:
+    """
+    在benchmark_cache目录中查找覆盖请求日期范围的缓存文件。
+
+    遍历所有以 ``{symbol}_`` 开头的 parquet 文件，读取实际数据日期范围，
+    若缓存数据覆盖 [start_date, end_date]，则从中截取并返回。
+
+    参数:
+        symbol: 指数代码
+        start_date: 请求起始日期
+        end_date: 请求结束日期
+
+    返回:
+        截取后的净值Series；无匹配缓存时返回None
+    """
+    cache_dir = DATA_DIR / "benchmark_cache"
+    if not cache_dir.exists():
+        return None
+    for fpath in sorted(cache_dir.glob(f"{symbol}_*.parquet")):
+        try:
+            cached = pd.read_parquet(fpath)
+            if "date" not in cached.columns or "nav" not in cached.columns:
+                continue
+            dates = pd.to_datetime(cached["date"])
+            nav = cached["nav"].astype(float)
+            if dates.min() > start_date or dates.max() < end_date:
+                continue
+            full_nav = pd.Series(nav.to_numpy(), index=pd.DatetimeIndex(dates), dtype=float)
+            subset = full_nav[(full_nav.index >= start_date) & (full_nav.index <= end_date)]
+            if not subset.empty:
+                logger.info(
+                    "从宽范围缓存加载基准净值（symbol=%s，缓存=%s，实际范围=%s~%s）",
+                    symbol, fpath.name, dates.min().strftime("%Y%m%d"), dates.max().strftime("%Y%m%d"),
+                )
+                return subset
+        except Exception:
+            continue
+    return None
 
 
 def _save_benchmark_cache(cache_path: Path, nav_series: pd.Series) -> None:
@@ -767,26 +841,37 @@ def _load_benchmark_from_local(
     返回:
         以日期为索引的累计净值Series；本地数据不可用时返回空Series
     """
-    for fname in ("test.parquet", "test.parquet.gz"):
-        fpath = DATA_DIR / fname
-        if fpath.exists():
-            try:
-                df = pd.read_parquet(fpath, columns=["date", "future_return_1w"])
-                df["date"] = pd.to_datetime(df["date"])
-                df = df[(df["date"] >= start_date) & (df["date"] <= end_date)]
-                if df.empty:
+    search_dirs = [DATA_DIR]
+    expanded_dir = DATA_DIR / "expanded"
+    if expanded_dir.exists():
+        search_dirs.append(expanded_dir)
+    for data_dir in search_dirs:
+        for fname in ("weekly_base.parquet", "test.parquet", "test.parquet.gz"):
+            fpath = data_dir / fname
+            if fpath.exists():
+                try:
+                    df = pd.read_parquet(fpath)
+                    df["date"] = pd.to_datetime(df["date"])
+                    df = df[(df["date"] >= start_date) & (df["date"] <= end_date)]
+                    if df.empty:
+                        continue
+                    if "future_return_1w" in df.columns:
+                        mkt_ret = df.groupby("date")["future_return_1w"].mean().sort_index()
+                    elif "pct_chg" in df.columns:
+                        df["pct_chg"] = pd.to_numeric(df["pct_chg"], errors="coerce")
+                        mkt_ret = df.groupby("date")["pct_chg"].mean().sort_index() / 100.0
+                    else:
+                        continue
+                    nav = (1 + mkt_ret).cumprod()
+                    nav.iloc[:] = nav.to_numpy()
+                    logger.info(
+                        "本地数据回退：使用等权市场基准（symbol=%s，%d条，来源=%s）",
+                        symbol, len(nav), fpath.name,
+                    )
+                    return nav
+                except Exception as exc:
+                    logger.warning("本地数据回退失败（symbol=%s，%s）: %s", symbol, fname, exc)
                     continue
-                mkt_ret = df.groupby("date")["future_return_1w"].mean().sort_index()
-                nav = (1 + mkt_ret).cumprod()
-                nav.iloc[:] = nav.to_numpy()
-                logger.info(
-                    "本地数据回退：使用等权市场基准（symbol=%s，%d条，来源=%s）",
-                    symbol, len(nav), fname,
-                )
-                return nav
-            except Exception as exc:
-                logger.warning("本地数据回退失败（symbol=%s，%s）: %s", symbol, fname, exc)
-                continue
     logger.warning("本地数据回退不可用（symbol=%s），无可用test.parquet", symbol)
     return pd.Series(dtype=float)
 
@@ -1172,10 +1257,12 @@ def compute_backtest_metrics(
         return {}
     nav_w = pd.Series(result_df["total_value"].to_numpy(), index=pd.to_datetime(result_df["date"]))
     nav_d = weekly_nav_to_daily_business_ffill(nav_w)
+    has_weekly = "weekly_return" in result_df.columns
+    weekly_ret = result_df["weekly_return"].dropna().to_numpy() if has_weekly else None
     if not extended:
-        return aggregate_metrics(nav_d)
+        return aggregate_metrics(nav_d, use_weekly_sharpe=has_weekly, weekly_returns=weekly_ret)
     trades = build_rebalance_turnover_trades(result_df, weekly_df)
-    m = aggregate_metrics(nav_d, trades_df=trades)
+    m = aggregate_metrics(nav_d, trades_df=trades, use_weekly_sharpe=has_weekly, weekly_returns=weekly_ret)
     wr = weekly_portfolio_win_rate(result_df)
     m["win_rate"] = wr
     ah = average_holding_weeks(result_df)
@@ -1187,13 +1274,13 @@ def compute_backtest_metrics(
             from .metrics import bootstrap_metric, sharpe_ratio as _sharpe_fn, annualized_return as _ar_fn
             m["sharpe_ci"] = bootstrap_metric(
                 weekly_returns,
-                lambda r: _sharpe_fn(pd.Series(r, index=pd.date_range("2020-01-01", periods=len(r), freq="B")), risk_free_rate=0.03),
+                lambda r: _sharpe_fn(pd.Series(r, index=pd.date_range("2020-01-01", periods=len(r), freq="W-FRI")), risk_free_rate=0.03),
                 n_bootstrap=1000,
                 confidence=0.95,
             )
             m["annualized_return_ci"] = bootstrap_metric(
                 weekly_returns,
-                lambda r: _ar_fn(pd.Series(r, index=pd.date_range("2020-01-01", periods=len(r), freq="B"))),
+                lambda r: _ar_fn(pd.Series(r, index=pd.date_range("2020-01-01", periods=len(r), freq="W-FRI"))),
                 n_bootstrap=1000,
                 confidence=0.95,
             )
@@ -1688,6 +1775,90 @@ def run_multi_topn_backtest(
     }
 
 
+class RandomPredictor:
+    """
+    随机打分预测器：对截面数据生成均匀随机分数，用于等权随机选股基线。
+    实现与 ModelPredictor 一致的 predict / predict_panel 接口，
+    可作为 custom_predictor 传入 BacktestEngine，确保交易成本口径与主引擎一致。
+
+    参数:
+        rng: numpy 随机数生成器实例（np.random.Generator）
+        data_dir: 数据目录路径，用于加载因子列名列表；为 None 时 _factor_cols 为空列表
+
+    属性:
+        model_type: 模型类型标识，固定为 "lightgbm"
+        _rng: 内部随机数生成器
+        _factor_cols: 因子列名列表（排除 group_id、group_size）
+        _data_dir: 数据目录路径
+    """
+
+    model_type: str = "lightgbm"
+
+    def __init__(self, rng: np.random.Generator, data_dir: Path | None = None) -> None:
+        self._rng = rng
+        self._factor_cols: list[str] = []
+        self._data_dir = data_dir
+        from .data_loader import load_factor_columns
+        try:
+            self._factor_cols = [
+                c for c in load_factor_columns(data_dir=data_dir)
+                if c not in {"group_id", "group_size"}
+            ]
+        except Exception:
+            pass
+
+    def predict(self, panel_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        对单期截面数据生成均匀随机分数。
+
+        参数:
+            panel_df: 含 stock_code 列的截面数据
+
+        返回:
+            含 stock_code、score 列的 DataFrame，按 score 降序排列；
+            空输入返回空 DataFrame
+
+        异常:
+            无
+        """
+        n = len(panel_df)
+        if n == 0:
+            return pd.DataFrame(columns=["stock_code", "score"])
+        scores = self._rng.random(n)
+        return pd.DataFrame({
+            "stock_code": panel_df["stock_code"].astype(str),
+            "score": scores,
+        }).sort_values("score", ascending=False, kind="mergesort").reset_index(drop=True)
+
+    def predict_panel(self, factor_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        对多期截面数据按日期分组生成随机分数。
+
+        参数:
+            factor_df: 含 date、stock_code 列的多期截面数据
+
+        返回:
+            含 date、stock_code、score 列的 DataFrame；
+            空输入返回空 DataFrame
+
+        异常:
+            无
+        """
+        if factor_df.empty:
+            return pd.DataFrame(columns=["date", "stock_code", "score"])
+        parts: list[pd.DataFrame] = []
+        for dt, group in factor_df.groupby("date", sort=True):
+            pred_df = self.predict(group)
+            parts.append(pd.DataFrame({
+                "date": pd.Timestamp(dt),
+                "stock_code": pred_df["stock_code"].astype(str).to_numpy(),
+                "score": pred_df["score"].to_numpy(dtype=np.float64),
+            }))
+        if not parts:
+            return pd.DataFrame(columns=["date", "stock_code", "score"])
+        return pd.concat(parts, ignore_index=True)
+
+
 def run_random_baseline(
     top_n: int = 20,
     initial_capital: float = 1_000_000.0,
@@ -1702,6 +1873,7 @@ def run_random_baseline(
 ) -> dict[str, Any]:
     """
     B-EW等权随机选股基线：每期从截面中随机选N只股票等权配置，跑多次取平均。
+    使用 BacktestEngine + RandomPredictor 执行回测，确保交易成本口径与主引擎一致。
 
     参数:
         top_n: 每期选股数量
@@ -1722,69 +1894,38 @@ def run_random_baseline(
         data_dir = Path(__file__).resolve().parent.parent / "data"
 
     weekly_df = BacktestEngine("lightgbm", top_n, initial_capital, data_dir=data_dir).load_weekly_data()
-    if use_split == "test":
-        cutoff = pd.Timestamp(val_end)
-        weekly_df = weekly_df[weekly_df["date"] > cutoff].copy()
-
-    dates = sorted(weekly_df["date"].unique())
 
     all_navs: list[np.ndarray] = []
     all_metrics: list[dict[str, Any]] = []
 
-    for run_i in range(n_runs):
+    for _run_i in range(n_runs):
         run_rng = np.random.default_rng(rng.integers(0, 2**31))
-        nav_points: list[float] = [1.0]
-        cash = initial_capital
-        positions: dict[str, dict[str, Any]] = {}
+        predictor = RandomPredictor(run_rng, data_dir=data_dir)
+        eng = BacktestEngine(
+            "lightgbm",
+            top_n,
+            initial_capital,
+            custom_predictor=predictor,
+            data_dir=data_dir,
+        )
+        result_df = eng.run_backtest(
+            weekly_df,
+            use_split=use_split,
+            train_end=train_end,
+            val_end=val_end,
+            skip_initial_weeks=skip_initial_weeks,
+        )
 
-        for i, d in enumerate(dates):
-            section = weekly_df[weekly_df["date"] == d]
-            available = section["stock_code"].unique().tolist()
-            n_pick = min(top_n, len(available))
-            chosen = run_rng.choice(available, size=n_pick, replace=False).tolist()
+        if result_df.empty:
+            nav_arr = np.array([1.0])
+        else:
+            nav_arr = np.concatenate([
+                [1.0],
+                result_df["total_value"].to_numpy() / initial_capital,
+            ])
 
-            px = section.drop_duplicates("stock_code").set_index("stock_code")["close"] if "close" in section.columns else pd.Series(dtype=float)
-
-            # 卖出非目标
-            sell_proceeds = 0.0
-            for code in list(positions.keys()):
-                if code not in chosen:
-                    if code in px.index:
-                        sell_price = float(px.loc[code]) * (1 - 0.001)
-                        sell_proceeds += positions[code]["shares"] * sell_price
-                        sell_proceeds -= positions[code]["shares"] * sell_price * 0.0003
-                        sell_proceeds -= positions[code]["shares"] * sell_price * 0.0005
-                    del positions[code]
-
-            cash += sell_proceeds
-
-            # 买入目标
-            buy_codes = [c for c in chosen if c not in positions]
-            if buy_codes:
-                total_value = cash + sum(
-                    positions[c]["shares"] * float(px.loc[c]) if c in px.index else 0.0
-                    for c in positions
-                )
-                per_stock = total_value / max(len(chosen), 1)
-                for code in buy_codes:
-                    if code in px.index:
-                        buy_price = float(px.loc[code]) * (1 + 0.001)
-                        shares = per_stock / buy_price if buy_price > 0 else 0.0
-                        cost = shares * buy_price * (1 + 0.0003)
-                        cash -= cost
-                        positions[code] = {"shares": shares, "price": buy_price}
-
-            # 计算总权益
-            total = cash + sum(
-                positions[c]["shares"] * float(px.loc[c]) if c in px.index else 0.0
-                for c in positions
-            )
-            nav_points.append(total / initial_capital)
-
-        nav_arr = np.array(nav_points)
         all_navs.append(nav_arr)
 
-        # 计算指标
         rets = np.diff(nav_arr)
         if len(rets) > 1:
             ann_ret = float(np.mean(rets) * 52)
@@ -1795,18 +1936,29 @@ def run_random_baseline(
             mdd = float(np.min(dd))
         else:
             ann_ret = sharpe = mdd = 0.0
-        all_metrics.append({"annualized_return": ann_ret, "sharpe_ratio": sharpe, "max_drawdown": abs(mdd)})
+        all_metrics.append({
+            "annualized_return": ann_ret,
+            "sharpe_ratio": sharpe,
+            "max_drawdown": abs(mdd),
+        })
 
-    # 取平均
     max_len = max(len(n) for n in all_navs)
-    padded = np.array([np.pad(n, (0, max_len - len(n)), constant_values=n[-1]) for n in all_navs])
+    padded = np.array([
+        np.pad(n, (0, max_len - len(n)), constant_values=n[-1])
+        for n in all_navs
+    ])
     avg_nav = np.mean(padded, axis=0)
 
     avg_metrics: dict[str, float] = {}
     for key in all_metrics[0]:
         avg_metrics[key] = float(np.mean([m[key] for m in all_metrics]))
 
-    return {"avg_nav": avg_nav, "avg_metrics": avg_metrics, "all_navs": all_navs, "all_metrics": all_metrics}
+    return {
+        "avg_nav": avg_nav,
+        "avg_metrics": avg_metrics,
+        "all_navs": all_navs,
+        "all_metrics": all_metrics,
+    }
 
 
 def run_momentum_baseline(

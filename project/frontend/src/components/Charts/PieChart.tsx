@@ -75,8 +75,10 @@ function PieChartComponent({
   const option: EChartsOption = useMemo(() => {
     return {
       backgroundColor: bgColor,
-      title: title
-        ? {
+      title: (() => {
+        const titles: EChartsOption['title'] = []
+        if (title) {
+          titles.push({
             text: title,
             left: 'center',
             textStyle: {
@@ -84,8 +86,30 @@ function PieChartComponent({
               fontWeight: 600,
               color: textColor,
             },
-          }
-        : undefined,
+          })
+        }
+        if (donut && (centerLabel || centerValue)) {
+          titles.push({
+            text: centerValue || '',
+            subtext: centerLabel || '',
+            left: 'center',
+            top: 'center',
+            textAlign: 'center',
+            textStyle: {
+              fontSize: 24,
+              fontWeight: 700,
+              color: textColor,
+            },
+            subtextStyle: {
+              fontSize: 12,
+              color: textSubtleColor,
+            },
+            itemGap: 4,
+          })
+        }
+        if (titles.length === 0) return undefined
+        return titles.length === 1 ? titles[0] : titles
+      })(),
       tooltip: {
         trigger: 'item',
         formatter: '{b}: {c} ({d}%)',
@@ -104,34 +128,6 @@ function PieChartComponent({
               fontSize: 12,
             },
           }
-        : undefined,
-      graphic: donut && (centerLabel || centerValue)
-        ? [
-            {
-              type: 'text',
-              left: 'center',
-              top: 'center',
-              style: {
-                text: centerValue || '',
-                fontSize: 24,
-                fontWeight: 700,
-                fill: textColor,
-                textAlign: 'center',
-              },
-            },
-            {
-              type: 'text',
-              left: 'center',
-              top: 'center',
-              style: {
-                text: centerLabel || '',
-                fontSize: 12,
-                fill: textSubtleColor,
-                textAlign: 'center',
-                y: centerValue ? 20 : 0,
-              },
-            },
-          ]
         : undefined,
       series: [
         {
@@ -183,9 +179,19 @@ function PieChartComponent({
       ],
     }
   }, [
-    data, title, donut, centerLabel, centerValue, showLegend,
-    showLabel, labelPosition, showLabelLine, isDark,
-    textColor, textSubtleColor, bgColor,
+    data,
+    title,
+    donut,
+    centerLabel,
+    centerValue,
+    showLegend,
+    showLabel,
+    labelPosition,
+    showLabelLine,
+    isDark,
+    textColor,
+    textSubtleColor,
+    bgColor,
   ])
 
   return (

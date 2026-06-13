@@ -1,26 +1,26 @@
 {
   "10": {
-    "annualized_return": 0.024244714795386146,
-    "sharpe_ratio": -0.02761521577281601,
-    "max_drawdown": 0.2440812202287609,
-    "turnover_rate": 1.5234698888538183
+    "annualized_return": 0.05989299880608967,
+    "sharpe_ratio": 0.2662697632985051,
+    "max_drawdown": 0.18070766418980366,
+    "turnover_rate": 1.370815223993222
   },
   "30": {
-    "annualized_return": -0.007845459048104853,
-    "sharpe_ratio": -0.18080432883641734,
-    "max_drawdown": 0.2867005587652651,
-    "turnover_rate": 1.5052361170725874
+    "annualized_return": 0.0936090802747267,
+    "sharpe_ratio": 0.47513523036834204,
+    "max_drawdown": 0.1591846415981747,
+    "turnover_rate": 1.3787725669928443
   },
   "60": {
-    "annualized_return": 0.0834392712256784,
-    "sharpe_ratio": 0.2509212349317043,
-    "max_drawdown": 0.1903563980633196,
-    "turnover_rate": 1.444649833093345
+    "annualized_return": 0.07239110730589005,
+    "sharpe_ratio": 0.3676186045652601,
+    "max_drawdown": 0.180523268821144,
+    "turnover_rate": 1.357581615883476
   },
   "100": {
-    "annualized_return": 0.09664715870403273,
-    "sharpe_ratio": 0.2969408612560049,
-    "max_drawdown": 0.22129407985168748,
-    "turnover_rate": 1.3987652473425838
+    "annualized_return": 0.03723383276011427,
+    "sharpe_ratio": 0.13280857124573892,
+    "max_drawdown": 0.20769630483081847,
+    "turnover_rate": 1.3530544697968632
   }
 }
