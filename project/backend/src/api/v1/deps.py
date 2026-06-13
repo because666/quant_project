@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 @lru_cache(maxsize=1)
 def _predictor_singleton(model_key: str) -> ModelPredictor:
     mt: ModelKind = "lightgbm" if model_key == "lightgbm" else "xgboost"
-    return ModelPredictor(mt)
+    return ModelPredictor(mt, data_dir="/app/data")
 
 
 def get_predictor() -> ModelPredictor:
